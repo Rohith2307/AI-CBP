@@ -67,3 +67,21 @@ def test_core_dependencies_importable():
     assert streamlit is not None
     assert joblib is not None
 
+
+def test_nltk_resources_available():
+    """Verify that essential NLTK resources (stopwords, wordnet, punkt) are available."""
+    import src  # noqa: F401 - ensures workspace nltk_data is registered
+    from nltk.corpus import stopwords
+    from nltk.stem import WordNetLemmatizer
+    from nltk.tokenize import word_tokenize
+
+    stop_words = stopwords.words("english")
+    assert len(stop_words) > 0
+    assert "not" in stop_words  # note: we preserve negations in preprocessing pipeline
+
+    lemmatizer = WordNetLemmatizer()
+    assert lemmatizer.lemmatize("running", pos="v") == "run"
+
+    tokens = word_tokenize("Testing NLTK tokenization works!")
+    assert tokens == ["Testing", "NLTK", "tokenization", "works", "!"]
+
