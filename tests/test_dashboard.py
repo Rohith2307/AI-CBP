@@ -177,3 +177,48 @@ def test_trends_page_redesign_components():
     assert any("Grievance Surge Detection" in m.value for m in at.markdown)
     assert any("Methodological Causality Notice" in m.value for m in at.markdown)
 
+
+def test_feedback_explorer_search_and_filter():
+    """Verify Feedback Explorer search and sentiment filters update output."""
+    at = AppTest.from_file(APP_PATH, default_timeout=30)
+    at.run()
+
+    at.sidebar.radio[0].set_value("🔍 Feedback Explorer").run()
+    assert not at.exception
+    assert any("Granular Comment Search & Filter Telemetry" in m.value for m in at.markdown)
+
+    # Apply search filter
+    search_input = at.text_input[0]
+    search_input.set_value("flight").run()
+    assert not at.exception
+    assert any("matching comments" in c.value for c in at.caption)
+
+
+def test_model_performance_leaderboard():
+    """Verify Candidate Benchmark leaderboard, winning model card, and test set audit."""
+    at = AppTest.from_file(APP_PATH, default_timeout=30)
+    at.run()
+
+    at.sidebar.radio[0].set_value("🎯 Model Performance").run()
+    assert not at.exception
+    assert any("Candidate Benchmark & Test Set Audit" in m.value for m in at.markdown)
+    assert any("Selected Production Model" in m.value for m in at.markdown)
+    assert any("Unbiased Held-Out Test Split Audit" in m.value for m in at.markdown)
+    assert len(at.table) >= 2  # Comparison table + Per-class metrics table
+
+
+def test_insights_export_downloads():
+    """Verify Executive Insights KPIs, driver cards, and download buttons."""
+    at = AppTest.from_file(APP_PATH, default_timeout=30)
+    at.run()
+
+    at.sidebar.radio[0].set_value("📑 Insights & Export").run()
+    assert not at.exception
+    assert any("Executive Intelligence Dossier" in m.value for m in at.markdown)
+    assert any("Executive Summary" in m.value for m in at.markdown)
+    assert any("Top Complaint Drivers" in m.value for m in at.markdown)
+    assert any("Top Praise Drivers" in m.value for m in at.markdown)
+    labels = [b.label for b in at.download_button]
+    assert any("Download Predictions CSV" in l for l in labels)
+    assert any("Download Executive Report (.md)" in l for l in labels)
+

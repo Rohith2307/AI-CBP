@@ -702,7 +702,11 @@ elif nav_selection == "🧠 Sentiment Analysis":
 # =========================================================================
 elif nav_selection == "🔍 Feedback Explorer":
     st.title("Customer Feedback Explorer")
-    st.markdown("Search, filter, and inspect customer comments across sentiment and metadata.")
+    render_section_header(
+        "Granular Comment Search & Filter Telemetry",
+        "Search, filter, and inspect customer comments across sentiment classes, keywords, and entity categories.",
+        badge="Feedback Browser",
+    )
 
     if st.session_state.active_df.empty:
         st.warning("No dataset loaded.")
@@ -715,7 +719,11 @@ elif nav_selection == "🔍 Feedback Explorer":
         with c1:
             search_query = st.text_input("Search keywords (e.g. 'delay', 'crew', 'lost', 'wifi'):")
         with c2:
-            sentiment_filter = st.multiselect("Sentiment Filter", ["Negative", "Neutral", "Positive"], default=["Negative", "Neutral", "Positive"])
+            sentiment_filter = st.multiselect(
+                "Sentiment Filter",
+                ["Negative", "Neutral", "Positive"],
+                default=["Negative", "Neutral", "Positive"],
+            )
         with c3:
             product_filter = "All"
             if "product" in df.columns and df["product"].nunique() > 1:
@@ -730,17 +738,20 @@ elif nav_selection == "🔍 Feedback Explorer":
         if product_filter != "All" and "product" in filtered.columns:
             filtered = filtered[filtered["product"] == product_filter]
 
-        st.caption(f"Showing **{len(filtered):,}** matching comments out of {len(df):,} total.")
+        st.caption(f"Showing **{len(filtered):,}** matching comments out of {len(df):,} total records.")
 
-        display_cols = [text_col, sent_col]
-        if "predicted_probability" in filtered.columns:
-            display_cols.append("predicted_probability")
-        if "product" in filtered.columns:
-            display_cols.append("product")
-        if "date" in filtered.columns:
-            display_cols.append("date")
+        if filtered.empty:
+            render_callout("ℹ️ No feedback records match the current keyword and sentiment filters.", callout_type="info")
+        else:
+            display_cols = [text_col, sent_col]
+            if "predicted_probability" in filtered.columns:
+                display_cols.append("predicted_probability")
+            if "product" in filtered.columns:
+                display_cols.append("product")
+            if "date" in filtered.columns:
+                display_cols.append("date")
 
-        st.dataframe(filtered[display_cols], use_container_width=True)
+            st.dataframe(filtered[display_cols], use_container_width=True)
 
 
 # =========================================================================
@@ -815,24 +826,60 @@ elif nav_selection == "📈 Trends & Spikes":
 # =========================================================================
 elif nav_selection == "🎯 Model Performance":
     st.title("Machine Learning Model Evaluation")
-    st.markdown("Comprehensive evaluation metrics and error audit strictly evaluated on the held-out test split.")
+    render_section_header(
+        "Candidate Benchmark & Test Set Audit",
+        "Comparative benchmark across candidate classifiers and unbiased final evaluation on the held-out test split.",
+        badge="Model Governance",
+    )
 
+    # 1. Multi-Model Candidate Leaderboard
+    if COMPARISON_RESULTS_PATH.exists():
+        with open(COMPARISON_RESULTS_PATH, "r") as f:
+            comp_data = json.load(f)
+
+        st.markdown(f"""
+        <div class="surface-card" style="border-left: 4px solid #06D6A0; margin-bottom: 14px;">
+            <div style="font-size: 0.72rem; font-weight: 700; color: #06D6A0; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">🏆 Selected Production Model</div>
+            <h3 style="margin: 0 0 6px 0; color: #F8FAFC;">{comp_data['best_model_name']} (Balanced Class Weights)</h3>
+            <p style="font-size: 0.88rem; color: #94A3B8; margin: 0; line-height: 1.5;">{comp_data['selection_rationale']}</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.subheader("1. Candidate Model Comparison (5-Fold Cross-Validation)")
+        st.caption("Models trained strictly on the 70% training split and compared using 5-fold cross-validation and the 15% validation split.")
+        st.table(pd.DataFrame(comp_data["comparison_table"]))
+
+    # 2. Unbiased Held-Out Test Set Audit
     if EVAL_RESULTS_PATH.exists():
         with open(EVAL_RESULTS_PATH, "r") as f:
             eval_data = json.load(f)
 
-        m1, m2, m3, m4 = st.columns(4)
-        m1.metric("Test Accuracy", f"{eval_data['test_accuracy'] * 100:.2f}%")
-        m2.metric("Test Macro F1", f"{eval_data['test_macro_f1']:.4f}")
-        m3.metric("Test Macro Precision", f"{eval_data['test_macro_precision']:.4f}")
-        m4.metric("Test Macro Recall", f"{eval_data['test_macro_recall']:.4f}")
+        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+        render_section_header(
+            "Unbiased Held-Out Test Split Audit",
+            "Strictly evaluated once on 2,165 held-out test comments (15% split) that were never exposed during training or model selection.",
+            badge="Held-Out Test Set",
+        )
 
-        st.markdown("---")
+        m1, m2, m3, m4 = st.columns(4)
+        with m1:
+            render_kpi_card("Test Accuracy", f"{eval_data['test_accuracy'] * 100:.2f}%", "Overall classification accuracy", badge_text="Accuracy", badge_type="positive", icon="🎯")
+        with m2:
+            render_kpi_card("Test Macro F1", f"{eval_data['test_macro_f1']:.4f}", "Unweighted mean across classes", badge_text="Balanced", badge_type="violet", icon="⚖️")
+        with m3:
+            render_kpi_card("Test Macro Precision", f"{eval_data['test_macro_precision']:.4f}", "True positives / predicted positives", badge_text="Precision", badge_type="neutral", icon="🔍")
+        with m4:
+            render_kpi_card("Test Macro Recall", f"{eval_data['test_macro_recall']:.4f}", "True positives / actual positives", badge_text="Recall", badge_type="neutral", icon="📡")
+
+        st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
         c1, c2 = st.columns([1, 1])
 
         with c1:
             st.subheader("Confusion Matrix (Held-Out Test Set)")
-            cm_fig = create_confusion_matrix_chart(eval_data["confusion_matrix"], eval_data["class_names"])
+            cm_fig = apply_dark_theme(
+                create_confusion_matrix_chart(eval_data["confusion_matrix"], eval_data["class_names"]),
+                title="Test Set Confusion Matrix (Counts & Recall %)",
+            )
             st.plotly_chart(cm_fig, use_container_width=True)
 
         with c2:
@@ -845,15 +892,15 @@ elif nav_selection == "🎯 Model Performance":
                     "Precision": f"{clf_rep[cls]['precision']:.4f}",
                     "Recall": f"{clf_rep[cls]['recall']:.4f}",
                     "F1-Score": f"{clf_rep[cls]['f1-score']:.4f}",
-                    "Support": int(clf_rep[cls]["support"]),
+                    "Support": f"{int(clf_rep[cls]['support']):,}",
                 })
             st.table(pd.DataFrame(rows))
 
             st.subheader("Error Archetypes Breakdown")
-            st.caption("Distribution of misclassification causes in the test set:")
+            st.caption(f"Systematic audit of all {eval_data['total_errors']:,} test misclassifications:")
             for arch, cnt in eval_data["error_archetypes_count"].items():
                 pct = (cnt / eval_data["total_errors"]) * 100
-                st.write(f"- **{arch}:** {cnt} ({pct:.1f}%)")
+                st.write(f"- **{arch}:** `{cnt}` comments ({pct:.1f}%)")
 
         with st.expander("Model Limitations & Responsible AI Notice"):
             for lim in eval_data.get("limitations", []):
@@ -868,7 +915,11 @@ elif nav_selection == "🎯 Model Performance":
 # =========================================================================
 elif nav_selection == "📑 Insights & Export":
     st.title("Executive Insights & Export")
-    st.markdown("Download generated sentiment predictions and summary reports for presentation.")
+    render_section_header(
+        "Executive Intelligence Dossier & Export Suite",
+        "Actionable business summaries, complaint/praise drivers, and download suite for reports and predictions.",
+        badge="Executive Reporting",
+    )
 
     if st.session_state.active_df.empty:
         st.warning("No active dataset loaded.")
@@ -877,16 +928,64 @@ elif nav_selection == "📑 Insights & Export":
         sent_col = "predicted_sentiment" if "predicted_sentiment" in df.columns else "sentiment"
         insights = generate_insights(df, sentiment_col=sent_col)
 
-        st.subheader("Executive Summary")
-        st.info(f"📋 {insights.executive_summary}")
+        # Executive Summary Card
+        st.markdown(f"""
+        <div class="surface-card" style="border-left: 4px solid #8B5CF6; margin-bottom: 16px;">
+            <div style="font-size: 0.75rem; font-weight: 700; color: #8B5CF6; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">📋 Executive Summary</div>
+            <p style="font-size: 0.95rem; color: #F8FAFC; margin: 0; line-height: 1.6;">{insights.executive_summary}</p>
+        </div>
+        """, unsafe_allow_html=True)
 
-        st.markdown(f"*{CAUSALITY_DISCLAIMER}*")
-        st.markdown("---")
+        # Strategic KPI Cards
+        k1, k2, k3, k4 = st.columns(4)
+        with k1:
+            render_kpi_card("Total Analyzed", f"{insights.kpis['total_comments']:,}", "Customer feedback records", badge_text="Total", badge_type="violet", icon="💬")
+        with k2:
+            render_kpi_card("Negative Feedback", f"{insights.kpis['negative_rate']}%", "Total dissatisfaction share", badge_text="Negative", badge_type="negative", icon="⚠️")
+        with k3:
+            render_kpi_card("Positive Feedback", f"{insights.kpis['positive_rate']}%", "Brand advocacy share", badge_text="Positive", badge_type="positive", icon="✨")
+        with k4:
+            render_kpi_card("Net Sentiment Score", f"{insights.kpis['net_sentiment_score']}", "Advocacy vs dissatisfaction index", badge_text="Index", badge_type="positive" if insights.kpis['net_sentiment_score'] > 0 else "negative", icon="📈")
 
-        c1, c2 = st.columns(2)
-        with c1:
-            st.subheader("Download Prediction Dataset")
-            st.caption("Exports full dataset with clean tokens, predicted sentiments, and probability scores.")
+        st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
+
+        # Strategic Pillars: Top Complaint vs Top Praise terms
+        col_c, col_p = st.columns(2)
+        with col_c:
+            st.markdown("""
+            <div class="surface-card" style="margin-bottom: 12px;">
+                <h4 style="margin: 0 0 8px 0; color: #EF4444;">🚨 Top Complaint Drivers</h4>
+                <p style="font-size: 0.85rem; color: #94A3B8; margin-bottom: 10px;">Primary keywords driving negative customer sentiment:</p>
+            </div>
+            """, unsafe_allow_html=True)
+            for term, count in insights.top_complaint_terms:
+                st.markdown(f"- <b>{term}</b>: `{count:,}` mentions", unsafe_allow_html=True)
+
+        with col_p:
+            st.markdown("""
+            <div class="surface-card" style="margin-bottom: 12px;">
+                <h4 style="margin: 0 0 8px 0; color: #06D6A0;">✨ Top Praise Drivers</h4>
+                <p style="font-size: 0.85rem; color: #94A3B8; margin-bottom: 10px;">Primary keywords driving positive customer advocacy:</p>
+            </div>
+            """, unsafe_allow_html=True)
+            for term, count in insights.top_positive_terms:
+                st.markdown(f"- <b>{term}</b>: `{count:,}` mentions", unsafe_allow_html=True)
+
+        render_callout(f"⚠️ <b>Methodological Causality Notice:</b> {CAUSALITY_DISCLAIMER}", callout_type="warning")
+
+        st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
+        render_section_header("Export Deliverables Suite", "Download generated prediction datasets and executive Markdown intelligence reports.", badge="Export Hub")
+
+        d1, d2 = st.columns(2)
+        with d1:
+            st.markdown(f"""
+            <div class="surface-card" style="margin-bottom: 10px;">
+                <h4 style="margin: 0 0 6px 0; color: #F8FAFC;">📥 Predictions Dataset (CSV)</h4>
+                <p style="font-size: 0.85rem; color: #94A3B8; margin-bottom: 8px;">
+                    Exports full active dataset ({len(df):,} rows) with clean tokens, predicted sentiments, and calibrated probability scores.
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
             csv_buffer = io.StringIO()
             df.to_csv(csv_buffer, index=False)
             st.download_button(
@@ -897,28 +996,34 @@ elif nav_selection == "📑 Insights & Export":
                 type="primary",
             )
 
-        with c2:
-            st.subheader("Download Summary Report")
-            st.caption("Exports executive markdown summary containing all calculated metrics and findings.")
-            report_md = f"""# Customer Sentiment Analysis — Executive Report
+        with d2:
+            st.markdown("""
+            <div class="surface-card" style="margin-bottom: 10px;">
+                <h4 style="margin: 0 0 6px 0; color: #F8FAFC;">📑 Executive Report (Markdown)</h4>
+                <p style="font-size: 0.85rem; color: #94A3B8; margin-bottom: 8px;">
+                    Exports formatted executive summary document with all KPIs, complaint drivers, praise terms, and methodology notes.
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+            report_md = f"""# Customer Sentiment Analysis — Executive Intelligence Dossier
 
-## Summary
+## 1. Executive Summary
 {insights.executive_summary}
 
-## KPIs
-- **Total Comments:** {insights.kpis['total_comments']:,}
+## 2. Key Performance Indicators
+- **Total Feedback Volume:** {insights.kpis['total_comments']:,}
 - **Negative Feedback Rate:** {insights.kpis['negative_rate']}%
 - **Positive Feedback Rate:** {insights.kpis['positive_rate']}%
 - **Neutral Rate:** {insights.kpis['neutral_rate']}%
-- **Net Sentiment Score:** {insights.kpis['net_sentiment_score']}
+- **Net Sentiment Score (NSS):** {insights.kpis['net_sentiment_score']}
 
-## Top Complaint Keywords
-{", ".join([f"{t[0]} ({t[1]})" for t in insights.top_complaint_terms])}
+## 3. Top Complaint Drivers (Negative)
+{", ".join([f"{t[0]} ({t[1]:,})" for t in insights.top_complaint_terms])}
 
-## Top Praise Keywords
-{", ".join([f"{t[0]} ({t[1]})" for t in insights.top_positive_terms])}
+## 4. Top Praise Drivers (Positive)
+{", ".join([f"{t[0]} ({t[1]:,})" for t in insights.top_positive_terms])}
 
-## Methodological Note
+## 5. Methodological Causality Notice
 {CAUSALITY_DISCLAIMER}
 """
             st.download_button(
@@ -926,4 +1031,5 @@ elif nav_selection == "📑 Insights & Export":
                 data=report_md,
                 file_name="sentiment_executive_report.md",
                 mime="text/markdown",
+                type="primary",
             )
