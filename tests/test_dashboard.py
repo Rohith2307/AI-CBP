@@ -133,3 +133,47 @@ def test_ingestion_page_redesign_components():
     # Check benchmark buttons
     btn_labels = [b.label for b in at.button]
     assert any("Load Development Sample" in l for l in btn_labels)
+
+
+def test_eda_page_redesign_components():
+    """Verify redesigned EDA page headers and lexical breakdown sections."""
+    at = AppTest.from_file(APP_PATH, default_timeout=30)
+    at.run()
+
+    at.sidebar.radio[0].set_value("📊 Exploratory Data (EDA)").run()
+    assert not at.exception
+    assert any("Linguistic Telemetry" in m.value for m in at.markdown)
+    assert any("Lexical Frequency Breakdown" in m.value for m in at.markdown)
+
+
+def test_sentiment_analysis_batch_inference_interactive():
+    """Verify batch inference interface runs and computes summary metrics."""
+    at = AppTest.from_file(APP_PATH, default_timeout=30)
+    at.run()
+
+    at.sidebar.radio[0].set_value("🧠 Sentiment Analysis").run()
+    assert not at.exception
+
+    # Locate the batch text area (second text area on page)
+    assert len(at.text_area) >= 2
+    at.text_area[1].set_value("Flight cancelled with zero notice!\nCabin crew was wonderful and attentive.\nIs gate 4 open?").run()
+
+    batch_btn = [b for b in at.button if b.label == "Run Batch Inference"][0]
+    batch_btn.click().run()
+    assert not at.exception
+
+    # Verify batch completion message and metrics
+    assert any("Successfully classified" in m.value for m in at.success)
+    assert any("Batch Volume" in m.value for m in at.markdown)
+
+
+def test_trends_page_redesign_components():
+    """Verify redesigned Trends & Spikes headers and causality notice."""
+    at = AppTest.from_file(APP_PATH, default_timeout=30)
+    at.run()
+
+    at.sidebar.radio[0].set_value("📈 Trends & Spikes").run()
+    assert not at.exception
+    assert any("Grievance Surge Detection" in m.value for m in at.markdown)
+    assert any("Methodological Causality Notice" in m.value for m in at.markdown)
+

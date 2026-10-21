@@ -484,7 +484,11 @@ elif nav_selection == "📂 Ingestion & Quality":
 # =========================================================================
 elif nav_selection == "📊 Exploratory Data (EDA)":
     st.title("Exploratory Data Analysis")
-    st.markdown("Examine distribution patterns, comment length behaviors, and frequent sentiment keywords.")
+    render_section_header(
+        "Corpus Distribution & Linguistic Telemetry",
+        "Inspect comment length behaviors, class balance, topic drivers, and high-frequency sentiment n-grams.",
+        badge="Linguistic EDA",
+    )
 
     if st.session_state.active_df.empty:
         st.warning("No active dataset loaded.")
@@ -494,30 +498,68 @@ elif nav_selection == "📊 Exploratory Data (EDA)":
         eda_df = prepare_df_with_sentiment(df, sentiment_col)
 
         summary = compute_sentiment_summary(eda_df)
-        st.info(f"📊 **Data Distribution Analysis:** {summary['explanation']}")
+        render_callout(f"📊 <b>Corpus Distribution Telemetry:</b> {summary['explanation']}", callout_type="info")
 
+        # Row 1: Length Distribution & Categorized Complaint Drivers / Products
         c1, c2 = st.columns(2)
         with c1:
-            st.subheader("Comment Length Distribution")
-            len_fig = create_length_distribution_chart(eda_df)
+            len_fig = apply_dark_theme(
+                create_length_distribution_chart(eda_df),
+                title="Character Length Distribution Across Sentiment Classes",
+            )
             st.plotly_chart(len_fig, use_container_width=True)
             length_stats = compute_length_statistics(eda_df)
             st.caption(f"📝 {length_stats['explanation']}")
 
         with c2:
-            st.subheader("Top Complaint Keywords")
-            comp_fig = create_top_words_bar_chart(eda_df, sentiment="Negative", top_n=10)
+            # Check for topic column
+            topics_fig = create_complaint_topics_chart(eda_df, top_n=8)
+            if topics_fig is not None:
+                st.plotly_chart(
+                    apply_dark_theme(topics_fig, title="Top Categorized Complaint Drivers"),
+                    use_container_width=True,
+                )
+            else:
+                p_chart = create_product_sentiment_chart(eda_df)
+                if p_chart is not None:
+                    st.plotly_chart(
+                        apply_dark_theme(p_chart, title="Product Sentiment Distribution (%)"),
+                        use_container_width=True,
+                    )
+                else:
+                    comp_bar = apply_dark_theme(
+                        create_top_words_bar_chart(eda_df, sentiment="Negative", top_n=10),
+                        title="Top Complaint Terms (Negative)",
+                    )
+                    st.plotly_chart(comp_bar, use_container_width=True)
+
+        st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
+        render_section_header(
+            "Lexical Frequency Breakdown by Class",
+            "Distinctive unigrams and bigrams extracted across customer dissatisfaction, advocacy, and neutral inquiries.",
+            badge="N-Gram Analysis",
+        )
+
+        c3, c4, c5 = st.columns(3)
+        with c3:
+            comp_fig = apply_dark_theme(
+                create_top_words_bar_chart(eda_df, sentiment="Negative", top_n=10),
+                title="Top Complaint Keywords (Negative)",
+            )
             st.plotly_chart(comp_fig, use_container_width=True)
 
-        c3, c4 = st.columns(2)
-        with c3:
-            st.subheader("Top Positive Keywords")
-            pos_fig = create_top_words_bar_chart(eda_df, sentiment="Positive", top_n=10)
+        with c4:
+            pos_fig = apply_dark_theme(
+                create_top_words_bar_chart(eda_df, sentiment="Positive", top_n=10),
+                title="Top Praise Keywords (Positive)",
+            )
             st.plotly_chart(pos_fig, use_container_width=True)
 
-        with c4:
-            st.subheader("Top Neutral / Inquiry Keywords")
-            neu_fig = create_top_words_bar_chart(eda_df, sentiment="Neutral", top_n=10)
+        with c5:
+            neu_fig = apply_dark_theme(
+                create_top_words_bar_chart(eda_df, sentiment="Neutral", top_n=10),
+                title="Top Inquiry Keywords (Neutral)",
+            )
             st.plotly_chart(neu_fig, use_container_width=True)
 
 
@@ -526,47 +568,133 @@ elif nav_selection == "📊 Exploratory Data (EDA)":
 # =========================================================================
 elif nav_selection == "🧠 Sentiment Analysis":
     st.title("Real-Time Sentiment Analysis Engine")
-    st.markdown("Classify customer comments using the trained Logistic Regression + TF-IDF model pipeline.")
+    render_section_header(
+        "Machine Learning Inference Suite",
+        "Deploy the production Logistic Regression + TF-IDF model pipeline for real-time text scoring and batch inference.",
+        badge="Live Inference",
+    )
 
-    st.subheader("1. Single Comment Classifier")
-    sample_options = [
-        "Select a sample comment or type your own below...",
-        "The flight crew was absolutely amazing and the seats were so comfortable! ❤️",
-        "Delayed 5 hours, no food vouchers, and lost our bags. Worst experience ever! 😡",
-        "Can someone please let me know what gate the flight from Dallas is arriving at?",
-        "Good perspective. If only this concern was shared before I arrived at the airport.",
-        "Not bad, but could be much better.",
-    ]
-    selected_sample = st.selectbox("Sample Comment Prompts", sample_options)
-    initial_text = "" if selected_sample == sample_options[0] else selected_sample
+    tab_single, tab_batch = st.tabs(["💬 Single Comment Classifier", "📦 Batch Text Inference"])
 
-    user_text = st.text_area("Customer Comment Input:", value=initial_text, height=100)
+    with tab_single:
+        sample_options = [
+            "Select a sample comment or type your own below...",
+            "The flight crew was absolutely amazing and the seats were so comfortable! ❤️",
+            "Delayed 5 hours, no food vouchers, and lost our bags. Worst experience ever! 😡",
+            "Can someone please let me know what gate the flight from Dallas is arriving at?",
+            "Good perspective. If only this concern was shared before I arrived at the airport.",
+            "Not bad, but could be much better.",
+        ]
+        selected_sample = st.selectbox("Curated Sample Prompts", sample_options)
+        initial_text = "" if selected_sample == sample_options[0] else selected_sample
 
-    if st.button("Predict Sentiment", type="primary"):
-        if not user_text.strip():
-            st.warning("Please enter a non-empty comment.")
+        user_text = st.text_area("Customer Comment Input:", value=initial_text, height=100)
+
+        if st.button("Predict Sentiment", type="primary"):
+            if not user_text.strip():
+                st.warning("Please enter a non-empty comment.")
+            else:
+                res = predictor.predict_single(user_text)
+                c1, c2 = st.columns([1, 2])
+                with c1:
+                    st.markdown("### Predicted Sentiment")
+                    st.markdown(format_sentiment_badge(res.predicted_sentiment), unsafe_allow_html=True)
+                    if res.predicted_probability:
+                        st.markdown(f"**Confidence Score:** `{res.predicted_probability:.2%}`")
+                        st.progress(res.predicted_probability)
+
+                with c2:
+                    st.markdown("### Class Probabilities")
+                    if res.class_probabilities:
+                        prob_df = pd.DataFrame(
+                            list(res.class_probabilities.items()),
+                            columns=["Class", "Probability"],
+                        )
+                        prob_df["Percentage"] = (prob_df["Probability"] * 100).round(2).astype(str) + "%"
+                        st.dataframe(prob_df, use_container_width=True)
+
+                with st.expander("Inspect NLP Preprocessing Tokens"):
+                    st.code(f"Original Text: {res.original_text}\nClean Tokens:  {res.clean_text}")
+
+    with tab_batch:
+        st.markdown(
+            "Run bulk sentiment inference across multiple comments simultaneously using the trained model pipeline."
+        )
+        batch_input_mode = st.radio(
+            "Batch Input Method",
+            ["Paste Comments (One per line)", "Upload Batch CSV"],
+            horizontal=True,
+        )
+
+        batch_texts = []
+        if batch_input_mode == "Paste Comments (One per line)":
+            batch_raw = st.text_area(
+                "Paste comments below (one per line):",
+                height=150,
+                placeholder="Flight delayed 4 hours with zero updates!\nLoved the friendly cabin attendants and quick boarding ❤️\nCan you confirm if flight 204 has departed?",
+            )
+            if batch_raw.strip():
+                batch_texts = [line.strip() for line in batch_raw.split("\n") if line.strip()]
         else:
-            res = predictor.predict_single(user_text)
-            c1, c2 = st.columns([1, 2])
-            with c1:
-                st.markdown("### Predicted Sentiment")
-                st.markdown(format_sentiment_badge(res.predicted_sentiment), unsafe_allow_html=True)
-                if res.predicted_probability:
-                    st.markdown(f"**Predicted Probability:** `{res.predicted_probability:.2%}`")
-                    st.progress(res.predicted_probability)
-
-            with c2:
-                st.markdown("### Class Probabilities")
-                if res.class_probabilities:
-                    prob_df = pd.DataFrame(
-                        list(res.class_probabilities.items()),
-                        columns=["Class", "Probability"],
+            batch_file = st.file_uploader("Upload CSV containing comments", type=["csv"], key="batch_csv_upload")
+            if batch_file is not None:
+                try:
+                    batch_upload_df = pd.read_csv(batch_file)
+                    st.write(f"Loaded CSV with {len(batch_upload_df):,} rows.")
+                    text_candidate = auto_detect_columns(list(batch_upload_df.columns)).get("text")
+                    cols = list(batch_upload_df.columns)
+                    selected_batch_col = st.selectbox(
+                        "Select column containing comments",
+                        cols,
+                        index=cols.index(text_candidate) if text_candidate in cols else 0,
                     )
-                    prob_df["Percentage"] = (prob_df["Probability"] * 100).round(2).astype(str) + "%"
-                    st.dataframe(prob_df, use_container_width=True)
+                    batch_texts = batch_upload_df[selected_batch_col].dropna().astype(str).tolist()
+                except Exception as e:
+                    st.error(f"Error reading CSV: {e}")
 
-            with st.expander("Inspect NLP Preprocessing Tokens"):
-                st.code(f"Original Text: {res.original_text}\nClean Tokens:  {res.clean_text}")
+        if st.button("Run Batch Inference", type="primary"):
+            if not batch_texts:
+                st.warning("Please provide at least one comment for batch inference.")
+            else:
+                with st.spinner(f"Classifying {len(batch_texts):,} comments..."):
+                    batch_res = predictor.predict_batch(batch_texts)
+
+                st.success(f"Successfully classified {batch_res.total_records:,} comments!")
+
+                # Batch summary KPIs
+                b1, b2, b3, b4 = st.columns(4)
+                with b1:
+                    render_kpi_card("Batch Volume", f"{batch_res.total_records:,}", "Comments processed", badge_text="Complete", badge_type="violet", icon="📦")
+                with b2:
+                    neg_b = batch_res.sentiment_counts.get("Negative", 0)
+                    render_kpi_card("Negative Feedback", f"{neg_b:,}", f"{round(neg_b / max(batch_res.total_records, 1) * 100, 1)}% of batch", badge_text="Negative", badge_type="negative", icon="⚠️")
+                with b3:
+                    pos_b = batch_res.sentiment_counts.get("Positive", 0)
+                    render_kpi_card("Positive Feedback", f"{pos_b:,}", f"{round(pos_b / max(batch_res.total_records, 1) * 100, 1)}% of batch", badge_text="Positive", badge_type="positive", icon="✨")
+                with b4:
+                    neu_b = batch_res.sentiment_counts.get("Neutral", 0)
+                    render_kpi_card("Neutral / Inquiries", f"{neu_b:,}", f"{round(neu_b / max(batch_res.total_records, 1) * 100, 1)}% of batch", badge_text="Neutral", badge_type="neutral", icon="💬")
+
+                st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+
+                # Predictions DataFrame Preview
+                preview_cols = ["original_text", "predicted_sentiment"]
+                if "predicted_probability" in batch_res.dataframe.columns:
+                    preview_cols.append("predicted_probability")
+                if "clean_text" in batch_res.dataframe.columns:
+                    preview_cols.append("clean_text")
+
+                st.dataframe(batch_res.dataframe[preview_cols], use_container_width=True)
+
+                # CSV Download Button
+                csv_buf = io.StringIO()
+                batch_res.dataframe.to_csv(csv_buf, index=False)
+                st.download_button(
+                    label="📥 Download Batch Predictions CSV",
+                    data=csv_buf.getvalue(),
+                    file_name="batch_sentiment_predictions.csv",
+                    mime="text/csv",
+                )
 
 
 # =========================================================================
@@ -620,7 +748,11 @@ elif nav_selection == "🔍 Feedback Explorer":
 # =========================================================================
 elif nav_selection == "📈 Trends & Spikes":
     st.title("Sentiment Trends & Spike Detection")
-    st.markdown("Analyze chronological sentiment volume and detect statistical surges in customer grievances.")
+    render_section_header(
+        "Chronological Telemetry & Grievance Surge Detection",
+        "Monitor daily sentiment volume trends and detect statistical surges in customer dissatisfaction with supporting evidence.",
+        badge="Trend Intelligence",
+    )
 
     if st.session_state.active_df.empty:
         st.warning("No dataset loaded.")
@@ -629,37 +761,53 @@ elif nav_selection == "📈 Trends & Spikes":
         sent_col = "predicted_sentiment" if "predicted_sentiment" in df.columns else "sentiment"
         insights = generate_insights(df, sentiment_col=sent_col, min_daily_volume=10)
 
-        # Spike Alerts
+        # Statistical Spike Alerts Section
+        st.subheader("🚨 Statistical Negative Grievance Spike Alerts")
         if insights.spike_alerts:
-            st.subheader("🚨 Statistical Sentiment Spike Alerts")
             for alert in insights.spike_alerts:
-                st.error(
-                    f"**{alert['severity']} SPIKE DETECTED on {alert['date']}**\n\n"
-                    f"{alert['message']}"
+                render_spike_alert(
+                    date=alert["date"],
+                    message=alert["message"],
+                    severity=alert["severity"],
+                    daily_count=alert.get("negative_count"),
+                    baseline_mean=alert.get("baseline_rate"),
                 )
         else:
-            st.success("✅ No statistical sentiment spike alerts triggered for the current volume threshold.")
+            render_callout(
+                "✅ <b>No Statistical Negative Spikes:</b> Daily grievance volume remained within normal statistical bounds "
+                "(less than 1.5 standard deviations above the historical baseline rate for qualified days).",
+                callout_type="success",
+            )
 
-        st.markdown(f"*{CAUSALITY_DISCLAIMER}*")
-        st.markdown("---")
+        # Methodological Causality Notice
+        render_callout(
+            f"⚠️ <b>Methodological Causality Notice:</b> {CAUSALITY_DISCLAIMER}",
+            callout_type="warning",
+        )
+
+        st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
 
         c1, c2 = st.columns(2)
         trend_eda_df = prepare_df_with_sentiment(df, sent_col)
         with c1:
-            st.subheader("Daily Sentiment Volume")
             t_chart = create_temporal_trend_chart(trend_eda_df)
             if t_chart:
-                st.plotly_chart(t_chart, use_container_width=True)
+                st.plotly_chart(
+                    apply_dark_theme(t_chart, title="Daily Sentiment Volume Timeline"),
+                    use_container_width=True,
+                )
             else:
-                st.info("Date information is not available in the active dataset.")
+                render_callout("ℹ️ Date information is not available in the active dataset to plot timeline trends.", callout_type="info")
 
         with c2:
-            st.subheader("Product Sentiment Comparison")
             p_chart = create_product_sentiment_chart(trend_eda_df)
             if p_chart:
-                st.plotly_chart(p_chart, use_container_width=True)
+                st.plotly_chart(
+                    apply_dark_theme(p_chart, title="Comparative Sentiment by Product / Airline (%)"),
+                    use_container_width=True,
+                )
             else:
-                st.info("Product/brand information is not available in the active dataset.")
+                render_callout("ℹ️ Product/brand entity column is not present in the active dataset to plot comparative distributions.", callout_type="info")
 
 
 # =========================================================================
