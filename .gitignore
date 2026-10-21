@@ -25,6 +25,7 @@ data/raw/*
 data/processed/*
 !data/processed/.gitkeep
 data/nltk_data/
+data/eda_charts/
 models/*
 !models/.gitkeep
 
