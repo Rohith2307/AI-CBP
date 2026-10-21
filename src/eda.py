@@ -38,7 +38,11 @@ def compute_sentiment_summary(df: pd.DataFrame) -> Dict[str, Any]:
         raise ValueError("DataFrame must contain a 'sentiment' column for EDA.")
 
     total = len(df)
-    counts = df["sentiment"].value_counts().to_dict()
+    sent_series = df["sentiment"]
+    if isinstance(sent_series, pd.DataFrame):
+        sent_series = sent_series.iloc[:, 0]
+
+    counts = sent_series.value_counts().to_dict()
     percentages = {cls: round((cnt / total) * 100, 2) for cls, cnt in counts.items()}
 
     majority_class = max(counts, key=counts.get)
