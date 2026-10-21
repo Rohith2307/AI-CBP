@@ -17,6 +17,7 @@ from dashboard.styles import (
     CORAL_RED,
     AMBER_WARNING,
     SENTIMENT_COLORS,
+    TEXT_PRIMARY,
     GLOBAL_CSS,
 )
 from dashboard.chart_theme import apply_dark_theme
@@ -27,17 +28,19 @@ from dashboard.components import (
     get_spike_alert_html,
     get_callout_html,
 )
+from dashboard.report_pdf import create_executive_report_pdf
+from src.insights import InsightReport
 
 
 def test_style_color_tokens():
     """Verify that design tokens match the SaaS dark palette specifications."""
-    assert BG_CANVAS == "#0B1120"
-    assert BG_SURFACE == "#10192D"
-    assert BG_CARD == "#162238"
-    assert PRIMARY_TEAL == "#06D6A0"
-    assert ACCENT_VIOLET == "#8B5CF6"
-    assert CORAL_RED == "#EF4444"
-    assert AMBER_WARNING == "#F59E0B"
+    assert BG_CANVAS == "#070B14"
+    assert BG_SURFACE == "#0D1423"
+    assert BG_CARD == "#121D30"
+    assert PRIMARY_TEAL == "#43F5C4"
+    assert ACCENT_VIOLET == "#A78BFA"
+    assert CORAL_RED == "#FF647C"
+    assert AMBER_WARNING == "#F5C56B"
 
     # Sentiment color mapping
     assert SENTIMENT_COLORS["Positive"] == PRIMARY_TEAL
@@ -51,7 +54,9 @@ def test_global_css_rules():
     assert ".sidebar-brand" in GLOBAL_CSS
     assert ".sentiment-badge" in GLOBAL_CSS
     assert ".spike-card" in GLOBAL_CSS
-    assert "Inter" in GLOBAL_CSS
+    assert "Avenir Next" in GLOBAL_CSS
+    assert "prefers-reduced-motion" in GLOBAL_CSS
+    assert ".stApp::before" in GLOBAL_CSS
 
 
 def test_chart_theme_apply_dark():
@@ -69,7 +74,7 @@ def test_chart_theme_apply_dark():
     assert themed_fig.layout.plot_bgcolor == "rgba(0, 0, 0, 0)"
     assert themed_fig.layout.height == 350
     assert "Custom Title" in themed_fig.layout.title.text
-    assert themed_fig.layout.font.color == "#F8FAFC"
+    assert themed_fig.layout.font.color == TEXT_PRIMARY
 
 
 def test_sentiment_badge_html_generation():
@@ -130,6 +135,40 @@ def test_spike_alert_html_generation():
     assert "450" in html
     assert "192.4" in html
     assert "spike-card" in html
+
+
+def test_spike_alert_escapes_dataset_content():
+    """Ensure custom dataset content is rendered as text, not interpreted HTML."""
+    html = get_spike_alert_html("<img src=x>", "<script>alert(1)</script>")
+    assert "&lt;img src=x&gt;" in html
+    assert "&lt;script&gt;alert(1)&lt;/script&gt;" in html
+
+
+def test_executive_report_pdf_contains_report_content():
+    """Ensure the executive report export is a real PDF with current insight data."""
+    report = InsightReport(
+        kpis={
+            "total_comments": 12,
+            "negative_rate": 25.0,
+            "positive_rate": 50.0,
+            "neutral_rate": 25.0,
+            "net_sentiment_score": 25.0,
+        },
+        top_complaint_terms=[("delay", 3)],
+        top_positive_terms=[("helpful", 5)],
+        product_comparison=None,
+        temporal_trends=None,
+        spike_alerts=[],
+        executive_summary="Positive feedback leads this sample.",
+        causality_disclaimer="Observed trends do not establish causality.",
+    )
+
+    pdf_bytes = create_executive_report_pdf(report)
+    assert pdf_bytes.startswith(b"%PDF-")
+    assert pdf_bytes.rstrip().endswith(b"%%EOF")
+    assert b"Executive Summary" in pdf_bytes
+    assert b"Positive feedback leads this sample." in pdf_bytes
+    assert b"delay" in pdf_bytes
 
 
 def test_callout_html_generation():

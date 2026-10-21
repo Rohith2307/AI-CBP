@@ -11,25 +11,25 @@ import streamlit as st
 # Design System Color Tokens
 # =========================================================================
 
-BG_CANVAS = "#0B1120"        # Deep midnight canvas background
-BG_SURFACE = "#10192D"       # Elevated container & sidebar surface
-BG_CARD = "#162238"          # Glassmorphic card surface
-BG_CARD_HOVER = "#1B2A47"    # Card hover elevation
-BORDER_SUBTLE = "#23314E"    # Card & widget borders
-BORDER_HOVER = "#3B527E"     # Hover border accent
-BORDER_FOCUS = "#06D6A0"     # Input focus ring
+BG_CANVAS = "#070B14"        # Deep midnight canvas background
+BG_SURFACE = "#0D1423"       # Elevated container & sidebar surface
+BG_CARD = "#121D30"          # Glass-like analytical surface
+BG_CARD_HOVER = "#1A2940"    # Card hover elevation
+BORDER_SUBTLE = "#283953"    # Card & widget borders
+BORDER_HOVER = "#3B5878"     # Hover border accent
+BORDER_FOCUS = "#43F5C4"     # Input focus ring
 
 # Core Accents
-PRIMARY_TEAL = "#06D6A0"     # Positive sentiment, primary actions
-ACCENT_VIOLET = "#8B5CF6"    # Machine learning, neural, neutral inquiry
-CORAL_RED = "#EF4444"        # Negative sentiment, grievances, critical spikes
-AMBER_WARNING = "#F59E0B"    # Duplicates, warnings, medium spikes
-MUTED_SLATE = "#64748B"      # Subtitles, inactive states, secondary indicators
+PRIMARY_TEAL = "#43F5C4"     # Positive sentiment, primary actions
+ACCENT_VIOLET = "#A78BFA"    # Machine learning, neural, neutral inquiry
+CORAL_RED = "#FF647C"        # Negative sentiment, grievances, critical spikes
+AMBER_WARNING = "#F5C56B"    # Duplicates, warnings, medium spikes
+MUTED_SLATE = "#73839B"      # Subtitles, inactive states, secondary indicators
 
 # Typography Colors
-TEXT_PRIMARY = "#F8FAFC"     # Headers, primary values (crisp off-white)
-TEXT_SECONDARY = "#94A3B8"   # Field labels, captions, metadata
-TEXT_MUTED = "#64748B"       # Subtle micro-copy, timestamps
+TEXT_PRIMARY = "#F5F7FF"     # Headers, primary values (crisp off-white)
+TEXT_SECONDARY = "#9BAAC2"   # Field labels, captions, metadata
+TEXT_MUTED = "#73839B"       # Subtle micro-copy, timestamps
 
 # Consistent Sentiment Color Mapping
 SENTIMENT_COLORS = {
@@ -44,23 +44,49 @@ SENTIMENT_COLORS = {
 # =========================================================================
 
 GLOBAL_CSS = f"""
-/* Google Fonts Import for Inter & JetBrains Mono */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
-
-html, body, [class*="css"] {{
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+html, body {{
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, 'Avenir Next', sans-serif;
     color: {TEXT_PRIMARY};
+    letter-spacing: 0;
 }}
 
 code, pre, [class*="stCode"] {{
-    font-family: 'JetBrains Mono', monospace !important;
+    font-family: 'SFMono-Regular', Consolas, monospace !important;
+    letter-spacing: 0;
 }}
 
-/* Main Application Container Spacing */
-.main .block-container {{
+/* Ambient light stays behind interactive content and has no script dependency. */
+.stApp {{
+    background:
+        radial-gradient(ellipse at 78% 2%, rgba(67, 245, 196, .075), transparent 34rem),
+        radial-gradient(ellipse at 12% 34%, rgba(167, 139, 250, .055), transparent 31rem),
+        {BG_CANVAS};
+    background-size: 160% 160%, 150% 150%, auto;
+    background-repeat: no-repeat;
+}}
+.stApp::before {{
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: .22;
+    background-image: linear-gradient(rgba(155, 170, 194, .035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(155, 170, 194, .035) 1px, transparent 1px);
+    background-size: 48px 48px;
+    -webkit-mask-image: linear-gradient(to bottom, black, transparent 78%);
+    mask-image: linear-gradient(to bottom, black, transparent 78%);
+}}
+.main .block-container, [data-testid="stMain"] .block-container {{
+    position: relative;
+    z-index: 1;
     padding-top: 1.35rem;
     padding-bottom: 3.5rem;
     max-width: 1300px;
+}}
+@keyframes reveal-up {{
+    from {{ opacity: 0.95; transform: translateY(4px); }}
+    to {{ opacity: 1; transform: translateY(0); }}
 }}
 
 /* Product page introduction: compact enough for analytical work, distinctive enough
@@ -73,14 +99,15 @@ code, pre, [class*="stCode"] {{
     padding: 12px 0 22px;
     margin-bottom: 4px;
     border-bottom: 1px solid {BORDER_SUBTLE};
+    animation: reveal-up 300ms ease-out;
 }}
 .page-hero-copy {{ max-width: 780px; }}
 .page-hero-eyebrow {{
-    color: {PRIMARY_TEAL}; font-size: .69rem; font-weight: 800; letter-spacing: .13em;
+    color: {PRIMARY_TEAL}; font-size: .69rem; font-weight: 800; letter-spacing: 0;
     text-transform: uppercase; margin: 0 0 8px;
 }}
 .page-hero h1 {{
-    color: {TEXT_PRIMARY}; font-size: clamp(1.65rem, 3vw, 2.25rem); letter-spacing: -.045em;
+    color: {TEXT_PRIMARY}; font-size: 2.15rem; letter-spacing: 0;
     line-height: 1.08; margin: 0 0 9px;
 }}
 .page-hero p {{ color: {TEXT_SECONDARY}; font-size: .94rem; line-height: 1.55; margin: 0; }}
@@ -93,13 +120,15 @@ code, pre, [class*="stCode"] {{
     font-size: .78rem; margin: -1px 0 18px;
 }}
 .dataset-status strong {{ color: {TEXT_PRIMARY}; }}
-.dataset-status-dot {{ width: 7px; height: 7px; border-radius: 50%; background: {PRIMARY_TEAL}; box-shadow: 0 0 0 4px rgba(6,214,160,.1); }}
+.dataset-status-dot {{ width: 7px; height: 7px; border-radius: 50%; background: {PRIMARY_TEAL}; box-shadow: 0 0 0 4px rgba(67,245,196,.1); }}
 .dataset-status-count {{ color: {PRIMARY_TEAL}; font-family: 'JetBrains Mono', monospace; font-size: .72rem; }}
 
 /* Custom Sidebar Styling */
 section[data-testid="stSidebar"] {{
     background-color: {BG_SURFACE};
     border-right: 1px solid {BORDER_SUBTLE};
+    position: relative;
+    z-index: 2;
 }}
 
 section[data-testid="stSidebar"] .block-container {{
@@ -119,13 +148,14 @@ section[data-testid="stSidebar"] .block-container {{
 .sidebar-brand-icon {{
     width: 38px;
     height: 38px;
-    background: linear-gradient(135deg, {PRIMARY_TEAL} 0%, {ACCENT_VIOLET} 100%);
+    background: linear-gradient(145deg, rgba(67,245,196,.2), rgba(167,139,250,.13));
+    border: 1px solid rgba(67,245,196,.35);
     border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 20px;
-    box-shadow: 0 4px 12px rgba(6, 214, 160, 0.25);
+    box-shadow: 0 0 22px rgba(67, 245, 196, 0.12);
 }}
 
 .sidebar-brand-text h2 {{
@@ -133,7 +163,7 @@ section[data-testid="stSidebar"] .block-container {{
     font-weight: 700;
     margin: 0;
     color: {TEXT_PRIMARY};
-    letter-spacing: -0.02em;
+    letter-spacing: 0;
 }}
 
 .sidebar-brand-text span {{
@@ -141,11 +171,11 @@ section[data-testid="stSidebar"] .block-container {{
     color: {PRIMARY_TEAL};
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0;
 }}
 
 .sidebar-dataset-card {{ background: {BG_CARD}; border: 1px solid {BORDER_SUBTLE}; border-radius: 10px; padding: 12px 14px; }}
-.sidebar-dataset-label {{ color: {TEXT_MUTED}; font-size: .68rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 5px; }}
+.sidebar-dataset-label {{ color: {TEXT_MUTED}; font-size: .68rem; font-weight: 800; letter-spacing: 0; text-transform: uppercase; margin-bottom: 5px; }}
 .sidebar-dataset-name {{ color: {TEXT_PRIMARY}; font-size: .86rem; font-weight: 700; line-height: 1.35; word-break: break-word; }}
 .sidebar-dataset-count {{ color: {PRIMARY_TEAL}; font-size: .75rem; font-weight: 650; margin-top: 7px; }}
 
@@ -176,7 +206,8 @@ section[data-testid="stSidebar"] div[role="radiogroup"] > label[data-checked="tr
 .kpi-card {{
     background-color: {BG_CARD};
     border: 1px solid {BORDER_SUBTLE};
-    border-radius: 12px;
+    border-top: 2px solid var(--kpi-accent, {BORDER_SUBTLE});
+    border-radius: 8px;
     padding: 20px 22px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
     transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
@@ -184,6 +215,7 @@ section[data-testid="stSidebar"] div[role="radiogroup"] > label[data-checked="tr
     flex-direction: column;
     justify-content: space-between;
     height: 100%;
+    animation: reveal-up 300ms ease-out;
 }}
 
 .kpi-card:hover {{
@@ -203,7 +235,7 @@ section[data-testid="stSidebar"] div[role="radiogroup"] > label[data-checked="tr
     font-size: 0.85rem;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0;
     color: {TEXT_SECONDARY};
 }}
 
@@ -220,7 +252,7 @@ section[data-testid="stSidebar"] div[role="radiogroup"] > label[data-checked="tr
 .kpi-value {{
     font-size: 2.1rem;
     font-weight: 800;
-    letter-spacing: -0.03em;
+    letter-spacing: 0;
     color: {TEXT_PRIMARY};
     line-height: 1.15;
     margin-bottom: 6px;
@@ -249,7 +281,7 @@ section[data-testid="stSidebar"] div[role="radiogroup"] > label[data-checked="tr
     font-size: 1.45rem;
     font-weight: 700;
     color: {TEXT_PRIMARY};
-    letter-spacing: -0.02em;
+    letter-spacing: 0;
     margin: 0 0 4px 0;
 }}
 
@@ -268,7 +300,7 @@ section[data-testid="stSidebar"] div[role="radiogroup"] > label[data-checked="tr
     border-radius: 20px;
     font-size: 0.82rem;
     font-weight: 700;
-    letter-spacing: 0.02em;
+    letter-spacing: 0;
     text-transform: uppercase;
 }}
 
@@ -294,18 +326,21 @@ section[data-testid="stSidebar"] div[role="radiogroup"] > label[data-checked="tr
 .surface-card {{
     background-color: {BG_CARD};
     border: 1px solid {BORDER_SUBTLE};
-    border-radius: 12px;
+    border-radius: 8px;
     padding: 22px;
     margin-bottom: 16px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+    box-shadow: 0 8px 26px rgba(0, 0, 0, 0.15);
+    transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }}
+.surface-card:hover {{ border-color: {BORDER_HOVER}; box-shadow: 0 12px 32px rgba(0,0,0,.22); }}
 
 /* Customer-voice browser */
 .feedback-record {{
-    background: {BG_CARD}; border: 1px solid {BORDER_SUBTLE}; border-radius: 10px;
+    background: {BG_CARD}; border: 1px solid {BORDER_SUBTLE}; border-radius: 8px;
     padding: 15px 17px; margin-bottom: 9px;
+    transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }}
-.feedback-record:hover {{ border-color: {BORDER_HOVER}; }}
+.feedback-record:hover {{ border-color: {BORDER_HOVER}; transform: translateY(-1px); box-shadow: 0 8px 22px rgba(0,0,0,.18); }}
 .feedback-record-top {{ display: flex; justify-content: space-between; gap: 12px; align-items: center; }}
 .feedback-record-top > div {{ color: {TEXT_MUTED}; font-size: .75rem; }}
 .feedback-record p {{ color: {TEXT_PRIMARY}; font-size: .92rem; line-height: 1.5; margin: 12px 0 10px; }}
@@ -313,19 +348,38 @@ section[data-testid="stSidebar"] div[role="radiogroup"] > label[data-checked="tr
 
 /* Native controls keep keyboard behaviour while receiving a visible focus treatment. */
 button:focus-visible, input:focus-visible, textarea:focus-visible {{ outline: 2px solid {BORDER_FOCUS} !important; outline-offset: 2px; }}
-div[data-testid="stDownloadButton"] button, div[data-testid="stButton"] button {{ border-radius: 8px; font-weight: 700; }}
-div[data-testid="stDataFrame"] {{ border: 1px solid {BORDER_SUBTLE}; border-radius: 10px; overflow: hidden; }}
+div[data-testid="stDownloadButton"] button, div[data-testid="stButton"] button {{
+    border-radius: 7px; font-weight: 700; transition: transform 140ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}}
+div[data-testid="stButton"] button[kind="primary"], div[data-testid="stDownloadButton"] button[kind="primary"] {{
+    background: {PRIMARY_TEAL}; border-color: {PRIMARY_TEAL}; color: {BG_CANVAS};
+}}
+div[data-testid="stButton"] button:hover, div[data-testid="stDownloadButton"] button:hover {{
+    border-color: {PRIMARY_TEAL}; box-shadow: 0 0 20px rgba(67,245,196,.14); transform: translateY(-1px);
+}}
+div[data-testid="stButton"] button:active, div[data-testid="stDownloadButton"] button:active {{ transform: scale(.985); }}
+div[data-testid="stDataFrame"] {{ border: 1px solid {BORDER_SUBTLE}; border-radius: 8px; overflow: hidden; }}
+
+@media (prefers-reduced-motion: reduce) {{
+    *, *::before, *::after {{
+        animation: none !important;
+        transition: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+    }}
+}}
 
 @media (max-width: 700px) {{
     .main .block-container {{ padding: 1rem .9rem 2.5rem; }}
     .page-hero {{ align-items: flex-start; flex-direction: column; gap: 13px; }}
+    .page-hero h1 {{ font-size: 1.7rem; }}
     .page-hero-context {{ white-space: normal; }}
     .kpi-card {{ padding: 16px; }}
 }}
 
 /* Statistical Spike Alert Cards */
 .spike-card {{
-    border-radius: 12px;
+    border-radius: 8px;
     padding: 16px 20px;
     margin-bottom: 14px;
     border: 1px solid rgba(239, 68, 68, 0.45);
@@ -348,7 +402,7 @@ div[data-testid="stDataFrame"] {{ border: 1px solid {BORDER_SUBTLE}; border-radi
     padding: 3px 10px;
     border-radius: 12px;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0;
 }}
 
 /* Streamlit Tabs Customization */

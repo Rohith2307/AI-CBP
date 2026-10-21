@@ -43,7 +43,7 @@ def test_dashboard_initial_load():
     at = AppTest.from_file(APP_PATH, default_timeout=30)
     at.run()
     assert not at.exception, f"App crashed on initial load: {at.exception}"
-    assert len(at.title) > 0
+    assert any("page-hero" in m.value for m in at.markdown)
 
 
 def test_dashboard_all_pages_render():
@@ -129,7 +129,7 @@ def test_ingestion_page_redesign_components():
     at.sidebar.radio[0].set_value("📂 Ingestion & Quality").run()
     assert not at.exception
     assert any("Data Hygiene Engine" in m.value for m in at.markdown)
-    assert any("Data Quality & Hygiene Audit" in m.value for m in at.markdown)
+    assert any("Data Quality &amp; Hygiene Audit" in m.value for m in at.markdown)
     # Check benchmark buttons
     btn_labels = [b.label for b in at.button]
     assert any("Load Development Sample" in l for l in btn_labels)
@@ -217,7 +217,7 @@ def test_feedback_explorer_search_and_filter():
 
     at.sidebar.radio[0].set_value("🔍 Feedback Explorer").run()
     assert not at.exception
-    assert any("Granular Comment Search & Filter Telemetry" in m.value for m in at.markdown)
+    assert any("Granular Comment Search &amp; Filter Telemetry" in m.value for m in at.markdown)
 
     # Apply search filter
     search_input = at.text_input[0]
@@ -233,7 +233,7 @@ def test_model_performance_leaderboard():
 
     at.sidebar.radio[0].set_value("🎯 Model Performance").run()
     assert not at.exception
-    assert any("Candidate Benchmark & Test Set Audit" in m.value for m in at.markdown)
+    assert any("Candidate Benchmark &amp; Test Set Audit" in m.value for m in at.markdown)
     assert any("Selected Production Model" in m.value for m in at.markdown)
     assert any("Unbiased Held-Out Test Split Audit" in m.value for m in at.markdown)
     assert len(at.table) >= 2  # Comparison table + Per-class metrics table
@@ -252,5 +252,5 @@ def test_insights_export_downloads():
     assert any("Top Praise Drivers" in m.value for m in at.markdown)
     labels = [b.label for b in at.download_button]
     assert any("Download Predictions CSV" in l for l in labels)
-    assert any("Download Executive Report (.md)" in l for l in labels)
+    assert any("Download Executive Report (PDF)" in l for l in labels)
 

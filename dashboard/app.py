@@ -10,10 +10,15 @@ and exportable executive reports.
 from pathlib import Path
 import io
 import json
+import sys
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.data_loader import auto_detect_columns, load_dataset
 from src.eda import (
@@ -47,6 +52,7 @@ from dashboard.styles import (
     TEXT_SECONDARY,
 )
 from dashboard.chart_theme import apply_dark_theme
+from dashboard.report_pdf import create_executive_report_pdf
 from dashboard.components import (
     render_kpi_card,
     render_section_header,
@@ -64,8 +70,8 @@ from dashboard.components import (
 
 # Page configuration
 st.set_page_config(
-    page_title="Customer Sentiment Analysis Framework",
-    page_icon="✈️",
+    page_title="SENTIMENT.AI | Customer Intelligence",
+    page_icon="◈",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -115,16 +121,16 @@ predictor = get_cached_predictor()
 with st.sidebar:
     st.markdown("""
     <div class="sidebar-brand">
-        <div class="sidebar-brand-icon">✈️</div>
+        <div class="sidebar-brand-icon" aria-hidden="true">S</div>
         <div class="sidebar-brand-text">
             <h2>SENTIMENT.AI</h2>
-            <span>Customer Intelligence</span>
+            <span>Signal intelligence</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
     nav_selection = st.radio(
-        "Navigation",
+        "Workspace",
         [
             "🏠 Overview",
             "📂 Ingestion & Quality",
@@ -145,13 +151,13 @@ with st.sidebar:
     st.markdown(f"""
     <div class="sidebar-dataset-card">
         <div class="sidebar-dataset-label">Active corpus</div>
-        <div class="sidebar-dataset-name">{source_label}</div>
+        <div class="sidebar-dataset-name">{source_label.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')}</div>
         <div class="sidebar-dataset-count">● {row_count:,} verified records</div>
     </div>
     """, unsafe_allow_html=True)
 
     st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-    st.caption("AI Customer Sentiment Framework • v1.2.0")
+    st.caption("INTELLIGENCE SYSTEM  ·  v1.2.0")
 
 
 # Helper for rendering sentiment badges using design system pills
@@ -173,7 +179,6 @@ def prepare_df_with_sentiment(data: pd.DataFrame, col_name: str) -> pd.DataFrame
 # Page 1: Overview
 # =========================================================================
 if nav_selection == "🏠 Overview":
-    st.title("Customer Sentiment Analysis Framework")
     render_page_hero(
         "Intelligence command center",
         "Customer sentiment, made decision-ready.",
@@ -212,7 +217,7 @@ if nav_selection == "🏠 Overview":
                 "Total Feedback Volume",
                 f"{total:,}",
                 "Customer comments ingested",
-                badge_text="100% Ingested",
+                badge_text="Active corpus",
                 badge_type="violet",
                 icon="💬",
             )
@@ -221,7 +226,7 @@ if nav_selection == "🏠 Overview":
                 "Negative Grievance Rate",
                 f"{neg_rate}%",
                 f"{neg_count:,} dissatisfaction reports",
-                badge_text=f"-{neg_rate}%",
+                badge_text="Corpus share",
                 badge_type="negative",
                 icon="⚠️",
             )
@@ -230,7 +235,7 @@ if nav_selection == "🏠 Overview":
                 "Positive Feedback Rate",
                 f"{pos_rate}%",
                 f"{pos_count:,} positive expressions",
-                badge_text=f"+{pos_rate}%",
+                badge_text="Corpus share",
                 badge_type="positive",
                 icon="✨",
             )
@@ -287,7 +292,6 @@ if nav_selection == "🏠 Overview":
 # Page 2: Ingestion & Quality
 # =========================================================================
 elif nav_selection == "📂 Ingestion & Quality":
-    st.title("Dataset Ingestion & Quality Validation")
     render_page_hero("Data operations", "Bring feedback into a trusted workspace.", "Map incoming fields, validate data quality, and preserve an auditable record of every retained or rejected row.", "Validation on")
     render_section_header(
         "Corpus Ingestion & Data Hygiene Engine",
@@ -496,7 +500,6 @@ elif nav_selection == "📂 Ingestion & Quality":
 # Page 3: Exploratory Data Analysis (EDA)
 # =========================================================================
 elif nav_selection == "📊 Exploratory Data (EDA)":
-    st.title("Exploratory Data Analysis")
     render_page_hero("Discovery workspace", "See the patterns behind the score.", "Compare sentiment, language, and complaint themes using the same active dataset that powers the rest of the product.", "Exploratory analysis")
     render_section_header(
         "Corpus Distribution & Linguistic Telemetry",
@@ -582,7 +585,6 @@ elif nav_selection == "📊 Exploratory Data (EDA)":
 # Page 4: Sentiment Analysis (Live Inference)
 # =========================================================================
 elif nav_selection == "🧠 Sentiment Analysis":
-    st.title("Real-Time Sentiment Analysis Engine")
     render_page_hero("Live inference laboratory", "Classify feedback with the production model.", "Use the deployed TF-IDF and Logistic Regression pipeline for a single customer message or an entire batch.", "Model ready")
     render_section_header(
         "Machine Learning Inference Suite",
@@ -717,7 +719,6 @@ elif nav_selection == "🧠 Sentiment Analysis":
 # Page 5: Feedback Explorer
 # =========================================================================
 elif nav_selection == "🔍 Feedback Explorer":
-    st.title("Customer Feedback Explorer")
     render_page_hero("Customer voice browser", "Read the evidence behind the metrics.", "Find individual comments, narrow the corpus by sentiment or product, and inspect model confidence in a focused reading view.", "Search enabled")
     render_section_header(
         "Granular Comment Search & Filter Telemetry",
@@ -784,7 +785,6 @@ elif nav_selection == "🔍 Feedback Explorer":
 # Page 6: Trends & Spikes
 # =========================================================================
 elif nav_selection == "📈 Trends & Spikes":
-    st.title("Sentiment Trends & Spike Detection")
     render_page_hero("Signal monitoring", "Separate genuine shifts from normal variation.", "Monitor chronological complaint volume and investigate anomalies using the project’s existing statistical detection methodology.", "Observational signals")
     render_section_header(
         "Chronological Telemetry & Grievance Surge Detection",
@@ -854,7 +854,6 @@ elif nav_selection == "📈 Trends & Spikes":
 # Page 7: Model Performance
 # =========================================================================
 elif nav_selection == "🎯 Model Performance":
-    st.title("Machine Learning Model Evaluation")
     render_page_hero("Evaluation & governance", "Make model quality explainable.", "Keep model selection, held-out evaluation, and known limitations clearly separated for a credible technical review.", "Held-out results")
     render_section_header(
         "Candidate Benchmark & Test Set Audit",
@@ -944,7 +943,6 @@ elif nav_selection == "🎯 Model Performance":
 # Page 8: Insights & Export
 # =========================================================================
 elif nav_selection == "📑 Insights & Export":
-    st.title("Executive Insights & Export")
     render_page_hero("Executive briefing", "Turn customer language into a useful narrative.", "Summarise the active dataset’s leading drivers, caveats, and exportable evidence for stakeholders.", "Report builder")
     render_section_header(
         "Executive Intelligence Dossier & Export Suite",
@@ -1032,37 +1030,17 @@ elif nav_selection == "📑 Insights & Export":
         with d2:
             st.markdown("""
             <div class="surface-card" style="margin-bottom: 10px;">
-                <h4 style="margin: 0 0 6px 0; color: #F8FAFC;">📑 Executive Report (Markdown)</h4>
+                <h4 style="margin: 0 0 6px 0; color: #F8FAFC;">📑 Executive Report (PDF)</h4>
                 <p style="font-size: 0.85rem; color: #94A3B8; margin-bottom: 8px;">
-                    Exports formatted executive summary document with all KPIs, complaint drivers, praise terms, and methodology notes.
+                    Exports a printable executive summary with KPIs, complaint drivers, praise terms, and methodology notes.
                 </p>
             </div>
             """, unsafe_allow_html=True)
-            report_md = f"""# Customer Sentiment Analysis — Executive Intelligence Dossier
-
-## 1. Executive Summary
-{insights.executive_summary}
-
-## 2. Key Performance Indicators
-- **Total Feedback Volume:** {insights.kpis['total_comments']:,}
-- **Negative Feedback Rate:** {insights.kpis['negative_rate']}%
-- **Positive Feedback Rate:** {insights.kpis['positive_rate']}%
-- **Neutral Rate:** {insights.kpis['neutral_rate']}%
-- **Net Sentiment Score (NSS):** {insights.kpis['net_sentiment_score']}
-
-## 3. Top Complaint Drivers (Negative)
-{", ".join([f"{t[0]} ({t[1]:,})" for t in insights.top_complaint_terms])}
-
-## 4. Top Praise Drivers (Positive)
-{", ".join([f"{t[0]} ({t[1]:,})" for t in insights.top_positive_terms])}
-
-## 5. Methodological Causality Notice
-{CAUSALITY_DISCLAIMER}
-"""
+            report_pdf = create_executive_report_pdf(insights)
             st.download_button(
-                label="📥 Download Executive Report (.md)",
-                data=report_md,
-                file_name="sentiment_executive_report.md",
-                mime="text/markdown",
+                label="📥 Download Executive Report (PDF)",
+                data=report_pdf,
+                file_name="sentiment_executive_report.pdf",
+                mime="application/pdf",
                 type="primary",
             )

@@ -18,9 +18,9 @@ from src.preprocessing import TextPreprocessor
 
 # Consistent color mapping for sentiments across all charts
 SENTIMENT_COLORS = {
-    "Positive": "#2ecc71",  # Emerald Green
-    "Neutral": "#f39c12",   # Sunflower Amber
-    "Negative": "#e74c3c",  # Crimson Red
+    "Positive": "#43F5C4",
+    "Neutral": "#A78BFA",
+    "Negative": "#FF647C",
 }
 
 

@@ -1,8 +1,5 @@
 [server]
-headless = true
 port = 8501
-enableCORS = false
-enableXsrfProtection = false
 
 [browser]
 gatherUsageStats = false
@@ -11,8 +8,8 @@ gatherUsageStats = false
 showErrorDetails = true
 
 [theme]
-primaryColor = "#06D6A0"
-backgroundColor = "#0B1120"
-secondaryBackgroundColor = "#10192D"
-textColor = "#F8FAFC"
+primaryColor = "#43F5C4"
+backgroundColor = "#070B14"
+secondaryBackgroundColor = "#0D1423"
+textColor = "#F5F7FF"
 font = "sans serif"

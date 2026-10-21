@@ -58,7 +58,7 @@ def test_all_pages_navigate_and_render_with_benchmark_data():
 
         at.sidebar.radio[0].set_value(page).run()
         assert not at.exception, f"Rendering failed for page {page}"
-        assert at.title[0].value, f"Page {page} missing main title!"
+        assert any("page-hero" in item.value for item in at.markdown), f"Page {page} missing hero title!"
 
 
 def test_trends_and_explorer_resilience_missing_optional_columns():

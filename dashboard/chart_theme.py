@@ -16,6 +16,7 @@ from dashboard.styles import (
     ACCENT_VIOLET,
     CORAL_RED,
     AMBER_WARNING,
+    MUTED_SLATE,
 )
 
 # Plotly dark theme color palette
@@ -24,8 +25,8 @@ DARK_THEME_PALETTE = [
     ACCENT_VIOLET,
     CORAL_RED,
     AMBER_WARNING,
-    "#38BDF8",  # Sky blue
-    "#EC4899",  # Pink
+    "#65B7D6",  # Cool blue
+    MUTED_SLATE,
 ]
 
 
@@ -55,7 +56,7 @@ def apply_dark_theme(
         paper_bgcolor="rgba(0, 0, 0, 0)",
         plot_bgcolor="rgba(0, 0, 0, 0)",
         font=dict(
-            family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif",
+            family="Avenir Next, Segoe UI, sans-serif",
             color=TEXT_PRIMARY,
             size=12,
         ),
@@ -63,12 +64,13 @@ def apply_dark_theme(
             bgcolor=BG_SURFACE,
             bordercolor=BORDER_SUBTLE,
             font=dict(
-                family="Inter, sans-serif",
+                family="Avenir Next, Segoe UI, sans-serif",
                 color=TEXT_PRIMARY,
                 size=12,
             ),
         ),
         margin=dict(l=40, r=30, t=50, b=40),
+        transition=dict(duration=280, easing="cubic-in-out"),
     )
 
     if title:

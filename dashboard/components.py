@@ -75,7 +75,7 @@ def get_kpi_card_html(
         badge_html = (
             f'<span style="background-color: {bg_color}; color: {text_color}; '
             f'padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; '
-            f'letter-spacing: 0.02em;">{badge_text}</span>'
+            f'letter-spacing: 0;">{escape(str(badge_text))}</span>'
         )
 
     icon_bg_colors = {
@@ -88,12 +88,12 @@ def get_kpi_card_html(
     icon_bg = icon_bg_colors.get(badge_type.lower(), icon_bg_colors["neutral"])
 
     return f"""
-    <div class="kpi-card">
+    <div class="kpi-card" style="--kpi-accent: {text_color};">
         <div>
             <div class="kpi-header">
                 <span class="kpi-label">{escape(str(title))}</span>
                 <div class="kpi-icon-pill" style="background-color: {icon_bg};">
-                    {icon}
+                    {escape(str(icon))}
                 </div>
             </div>
             <div class="kpi-value">{escape(str(value))}</div>
@@ -132,16 +132,16 @@ def get_section_header_html(
         badge_html = (
             f'<span style="background-color: rgba(139, 92, 246, 0.18); color: {ACCENT_VIOLET}; '
             f'padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; '
-            f'text-transform: uppercase; letter-spacing: 0.05em; border: 1px solid rgba(139, 92, 246, 0.3);">'
-            f'{badge}</span>'
+            f'text-transform: uppercase; letter-spacing: 0; border: 1px solid rgba(139, 92, 246, 0.3);">'
+            f'{escape(str(badge))}</span>'
         )
 
-    sub_html = f'<p class="section-header-subtitle">{subtitle}</p>' if subtitle else ""
+    sub_html = f'<p class="section-header-subtitle">{escape(str(subtitle))}</p>' if subtitle else ""
 
     return f"""
     <div class="section-header-wrap">
         <div>
-            <h3 class="section-header-title">{title}</h3>
+            <h3 class="section-header-title">{escape(str(title))}</h3>
             {sub_html}
         </div>
         <div>
@@ -181,12 +181,12 @@ def get_spike_alert_html(
     <div class="spike-card">
         <div class="spike-card-header">
             <span style="font-size: 0.95rem; font-weight: 700; color: {CORAL_RED};">
-                🚨 Statistical Spike Alert — {date}
+                🚨 Statistical Spike Alert — {escape(str(date))}
             </span>
             <span class="spike-badge">{severity}</span>
         </div>
         <div style="font-size: 0.88rem; color: {TEXT_PRIMARY}; line-height: 1.45;">
-            {message}
+            {escape(str(message))}
         </div>
         {stats_line}
     </div>
