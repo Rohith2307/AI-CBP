@@ -101,3 +101,21 @@ def test_custom_sample_dataset_loading():
 
     assert len(at.session_state["active_df"]) == 299
     assert "Sample Benchmark (299 rows)" in at.session_state["dataset_source_name"]
+
+
+def test_trends_page_with_full_benchmark_corpus_spike_rendering():
+    """Verify that Trends & Spikes renders genuine statistical spike alerts on the full benchmark dataset."""
+    at = AppTest.from_file(APP_PATH, default_timeout=30)
+    at.run()
+
+    full_csv = Path("data/processed/validated_airline_sentiment.csv")
+    if full_csv.exists():
+        at.session_state["active_df"] = pd.read_csv(full_csv)
+        at.session_state["dataset_source_name"] = "Full Benchmark (14,427 rows)"
+
+        # Switch to Trends & Spikes
+        at.sidebar.radio[0].set_value("📈 Trends & Spikes").run()
+        assert not at.exception
+        # Ensure render_spike_alert was called and rendered the spike card
+        assert any("Statistical Spike Alert" in m.value or "spike-card" in m.value for m in at.markdown)
+

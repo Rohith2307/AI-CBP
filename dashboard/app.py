@@ -52,8 +52,13 @@ from dashboard.components import (
     render_section_header,
     render_sentiment_badge,
     get_sentiment_badge_html,
+    render_spike_alert,
+    get_spike_alert_html,
     render_callout,
     get_callout_html,
+    render_page_hero,
+    render_dataset_status,
+    render_feedback_record,
 )
 
 
@@ -138,10 +143,10 @@ with st.sidebar:
     source_label = st.session_state.get("dataset_source_name", "None")
     row_count = len(st.session_state.active_df)
     st.markdown(f"""
-    <div style="background-color: #162238; border: 1px solid #23314E; border-radius: 10px; padding: 12px 14px;">
-        <div style="font-size: 0.72rem; font-weight: 700; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Active Corpus</div>
-        <div style="font-size: 0.90rem; font-weight: 700; color: #F8FAFC; word-break: break-word;">{source_label}</div>
-        <div style="font-size: 0.78rem; color: #06D6A0; margin-top: 5px; font-weight: 600;">● {row_count:,} Verified Records</div>
+    <div class="sidebar-dataset-card">
+        <div class="sidebar-dataset-label">Active corpus</div>
+        <div class="sidebar-dataset-name">{source_label}</div>
+        <div class="sidebar-dataset-count">● {row_count:,} verified records</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -169,6 +174,12 @@ def prepare_df_with_sentiment(data: pd.DataFrame, col_name: str) -> pd.DataFrame
 # =========================================================================
 if nav_selection == "🏠 Overview":
     st.title("Customer Sentiment Analysis Framework")
+    render_page_hero(
+        "Intelligence command center",
+        "Customer sentiment, made decision-ready.",
+        "A concise view of the active corpus: volume, customer risk, advocacy, and the signals worth investigating.",
+        "Live analysis",
+    )
     render_section_header(
         "Executive Telemetry & Sentiment Health",
         "Real-time opinion metrics, net sentiment balance, and distribution analytics across customer feedback.",
@@ -179,6 +190,7 @@ if nav_selection == "🏠 Overview":
         st.warning("No dataset is currently loaded. Go to **Ingestion & Quality** to upload or load data.")
     else:
         df = st.session_state.active_df
+        render_dataset_status(st.session_state.dataset_source_name, len(df))
         sentiment_col = "predicted_sentiment" if "predicted_sentiment" in df.columns else "sentiment"
 
         # KPIs Calculation
@@ -276,6 +288,7 @@ if nav_selection == "🏠 Overview":
 # =========================================================================
 elif nav_selection == "📂 Ingestion & Quality":
     st.title("Dataset Ingestion & Quality Validation")
+    render_page_hero("Data operations", "Bring feedback into a trusted workspace.", "Map incoming fields, validate data quality, and preserve an auditable record of every retained or rejected row.", "Validation on")
     render_section_header(
         "Corpus Ingestion & Data Hygiene Engine",
         "Upload customer text CSVs, auto-detect column schemas, and inspect automated data deduplication audit logs.",
@@ -484,6 +497,7 @@ elif nav_selection == "📂 Ingestion & Quality":
 # =========================================================================
 elif nav_selection == "📊 Exploratory Data (EDA)":
     st.title("Exploratory Data Analysis")
+    render_page_hero("Discovery workspace", "See the patterns behind the score.", "Compare sentiment, language, and complaint themes using the same active dataset that powers the rest of the product.", "Exploratory analysis")
     render_section_header(
         "Corpus Distribution & Linguistic Telemetry",
         "Inspect comment length behaviors, class balance, topic drivers, and high-frequency sentiment n-grams.",
@@ -494,6 +508,7 @@ elif nav_selection == "📊 Exploratory Data (EDA)":
         st.warning("No active dataset loaded.")
     else:
         df = st.session_state.active_df
+        render_dataset_status(st.session_state.dataset_source_name, len(df))
         sentiment_col = "predicted_sentiment" if "predicted_sentiment" in df.columns else "sentiment"
         eda_df = prepare_df_with_sentiment(df, sentiment_col)
 
@@ -568,6 +583,7 @@ elif nav_selection == "📊 Exploratory Data (EDA)":
 # =========================================================================
 elif nav_selection == "🧠 Sentiment Analysis":
     st.title("Real-Time Sentiment Analysis Engine")
+    render_page_hero("Live inference laboratory", "Classify feedback with the production model.", "Use the deployed TF-IDF and Logistic Regression pipeline for a single customer message or an entire batch.", "Model ready")
     render_section_header(
         "Machine Learning Inference Suite",
         "Deploy the production Logistic Regression + TF-IDF model pipeline for real-time text scoring and batch inference.",
@@ -702,6 +718,7 @@ elif nav_selection == "🧠 Sentiment Analysis":
 # =========================================================================
 elif nav_selection == "🔍 Feedback Explorer":
     st.title("Customer Feedback Explorer")
+    render_page_hero("Customer voice browser", "Read the evidence behind the metrics.", "Find individual comments, narrow the corpus by sentiment or product, and inspect model confidence in a focused reading view.", "Search enabled")
     render_section_header(
         "Granular Comment Search & Filter Telemetry",
         "Search, filter, and inspect customer comments across sentiment classes, keywords, and entity categories.",
@@ -712,6 +729,7 @@ elif nav_selection == "🔍 Feedback Explorer":
         st.warning("No dataset loaded.")
     else:
         df = st.session_state.active_df.copy()
+        render_dataset_status(st.session_state.dataset_source_name, len(df))
         sent_col = "predicted_sentiment" if "predicted_sentiment" in df.columns else "sentiment"
         text_col = "original_text" if "original_text" in df.columns else ("text" if "text" in df.columns else ("clean_text" if "clean_text" in df.columns else df.columns[0]))
 
@@ -743,15 +761,23 @@ elif nav_selection == "🔍 Feedback Explorer":
         if filtered.empty:
             render_callout("ℹ️ No feedback records match the current keyword and sentiment filters.", callout_type="info")
         else:
-            display_cols = [text_col, sent_col]
-            if "predicted_probability" in filtered.columns:
-                display_cols.append("predicted_probability")
-            if "product" in filtered.columns:
-                display_cols.append("product")
-            if "date" in filtered.columns:
-                display_cols.append("date")
-
-            st.dataframe(filtered[display_cols], use_container_width=True)
+            render_callout(
+                "Showing the first 100 matches in reading mode. Refine the search or filters to inspect a smaller slice of the corpus.",
+                callout_type="info",
+            )
+            for _, record in filtered.head(100).iterrows():
+                record_meta = []
+                if "product" in filtered.columns and pd.notna(record.get("product")):
+                    record_meta.append(str(record["product"]))
+                if "date" in filtered.columns and pd.notna(record.get("date")):
+                    record_meta.append(str(record["date"]))
+                confidence = record.get("predicted_probability")
+                render_feedback_record(
+                    text=record[text_col],
+                    sentiment=record[sent_col],
+                    probability=float(confidence) if pd.notna(confidence) else None,
+                    metadata=" · ".join(record_meta) if record_meta else None,
+                )
 
 
 # =========================================================================
@@ -759,6 +785,7 @@ elif nav_selection == "🔍 Feedback Explorer":
 # =========================================================================
 elif nav_selection == "📈 Trends & Spikes":
     st.title("Sentiment Trends & Spike Detection")
+    render_page_hero("Signal monitoring", "Separate genuine shifts from normal variation.", "Monitor chronological complaint volume and investigate anomalies using the project’s existing statistical detection methodology.", "Observational signals")
     render_section_header(
         "Chronological Telemetry & Grievance Surge Detection",
         "Monitor daily sentiment volume trends and detect statistical surges in customer dissatisfaction with supporting evidence.",
@@ -769,6 +796,7 @@ elif nav_selection == "📈 Trends & Spikes":
         st.warning("No dataset loaded.")
     else:
         df = st.session_state.active_df
+        render_dataset_status(st.session_state.dataset_source_name, len(df))
         sent_col = "predicted_sentiment" if "predicted_sentiment" in df.columns else "sentiment"
         text_col = "text" if "text" in df.columns else ("clean_text" if "clean_text" in df.columns else ("original_text" if "original_text" in df.columns else df.columns[0]))
         insights = generate_insights(df, text_col=text_col, sentiment_col=sent_col, min_daily_volume=10)
@@ -827,6 +855,7 @@ elif nav_selection == "📈 Trends & Spikes":
 # =========================================================================
 elif nav_selection == "🎯 Model Performance":
     st.title("Machine Learning Model Evaluation")
+    render_page_hero("Evaluation & governance", "Make model quality explainable.", "Keep model selection, held-out evaluation, and known limitations clearly separated for a credible technical review.", "Held-out results")
     render_section_header(
         "Candidate Benchmark & Test Set Audit",
         "Comparative benchmark across candidate classifiers and unbiased final evaluation on the held-out test split.",
@@ -916,6 +945,7 @@ elif nav_selection == "🎯 Model Performance":
 # =========================================================================
 elif nav_selection == "📑 Insights & Export":
     st.title("Executive Insights & Export")
+    render_page_hero("Executive briefing", "Turn customer language into a useful narrative.", "Summarise the active dataset’s leading drivers, caveats, and exportable evidence for stakeholders.", "Report builder")
     render_section_header(
         "Executive Intelligence Dossier & Export Suite",
         "Actionable business summaries, complaint/praise drivers, and download suite for reports and predictions.",
@@ -926,6 +956,7 @@ elif nav_selection == "📑 Insights & Export":
         st.warning("No active dataset loaded.")
     else:
         df = st.session_state.active_df
+        render_dataset_status(st.session_state.dataset_source_name, len(df))
         sent_col = "predicted_sentiment" if "predicted_sentiment" in df.columns else "sentiment"
         text_col = "text" if "text" in df.columns else ("clean_text" if "clean_text" in df.columns else ("original_text" if "original_text" in df.columns else df.columns[0]))
         insights = generate_insights(df, text_col=text_col, sentiment_col=sent_col)

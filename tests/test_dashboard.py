@@ -178,6 +178,38 @@ def test_trends_page_redesign_components():
     assert any("Methodological Causality Notice" in m.value for m in at.markdown)
 
 
+def test_trends_page_with_active_spike_alert_rendering():
+    """Verify Trends & Spikes executes render_spike_alert without NameError when spikes exist."""
+    at = AppTest.from_file(APP_PATH, default_timeout=30)
+    at.run()
+
+    # Construct synthetic multi-day dataset where Day 4 exhibits a major negative grievance spike
+    dates = []
+    sentiments = []
+    # Days 1-3: 50 comments/day, 20% negative baseline
+    for day in ["2025-01-01", "2025-01-02", "2025-01-03"]:
+        dates.extend([f"{day} 12:00:00"] * 50)
+        sentiments.extend(["Negative"] * 10 + ["Positive"] * 40)
+    # Day 4: 50 comments, 90% negative (triggers spike alert)
+    dates.extend(["2025-01-04 12:00:00"] * 50)
+    sentiments.extend(["Negative"] * 45 + ["Positive"] * 5)
+
+    spike_df = pd.DataFrame({
+        "text": ["Flight review sample"] * 200,
+        "clean_text": ["Flight review sample"] * 200,
+        "sentiment": sentiments,
+        "predicted_sentiment": sentiments,
+        "date": dates,
+        "product": ["AirlineX"] * 200,
+    })
+    at.session_state["active_df"] = spike_df
+
+    at.sidebar.radio[0].set_value("📈 Trends & Spikes").run()
+    assert not at.exception
+    # Ensure spike alert HTML rendered successfully by render_spike_alert
+    assert any("Statistical Spike Alert" in m.value or "spike-card" in m.value for m in at.markdown)
+
+
 def test_feedback_explorer_search_and_filter():
     """Verify Feedback Explorer search and sentiment filters update output."""
     at = AppTest.from_file(APP_PATH, default_timeout=30)

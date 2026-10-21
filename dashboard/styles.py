@@ -58,10 +58,43 @@ code, pre, [class*="stCode"] {{
 
 /* Main Application Container Spacing */
 .main .block-container {{
-    padding-top: 2rem;
+    padding-top: 1.35rem;
     padding-bottom: 3.5rem;
     max-width: 1300px;
 }}
+
+/* Product page introduction: compact enough for analytical work, distinctive enough
+   to establish hierarchy before the charts begin. */
+.page-hero {{
+    display: flex;
+    justify-content: space-between;
+    gap: 28px;
+    align-items: flex-end;
+    padding: 12px 0 22px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid {BORDER_SUBTLE};
+}}
+.page-hero-copy {{ max-width: 780px; }}
+.page-hero-eyebrow {{
+    color: {PRIMARY_TEAL}; font-size: .69rem; font-weight: 800; letter-spacing: .13em;
+    text-transform: uppercase; margin: 0 0 8px;
+}}
+.page-hero h1 {{
+    color: {TEXT_PRIMARY}; font-size: clamp(1.65rem, 3vw, 2.25rem); letter-spacing: -.045em;
+    line-height: 1.08; margin: 0 0 9px;
+}}
+.page-hero p {{ color: {TEXT_SECONDARY}; font-size: .94rem; line-height: 1.55; margin: 0; }}
+.page-hero-context {{
+    border: 1px solid {BORDER_SUBTLE}; border-radius: 8px; color: {TEXT_SECONDARY};
+    font-size: .78rem; font-weight: 600; padding: 8px 10px; white-space: nowrap;
+}}
+.dataset-status {{
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: {TEXT_SECONDARY};
+    font-size: .78rem; margin: -1px 0 18px;
+}}
+.dataset-status strong {{ color: {TEXT_PRIMARY}; }}
+.dataset-status-dot {{ width: 7px; height: 7px; border-radius: 50%; background: {PRIMARY_TEAL}; box-shadow: 0 0 0 4px rgba(6,214,160,.1); }}
+.dataset-status-count {{ color: {PRIMARY_TEAL}; font-family: 'JetBrains Mono', monospace; font-size: .72rem; }}
 
 /* Custom Sidebar Styling */
 section[data-testid="stSidebar"] {{
@@ -110,6 +143,11 @@ section[data-testid="stSidebar"] .block-container {{
     text-transform: uppercase;
     letter-spacing: 0.06em;
 }}
+
+.sidebar-dataset-card {{ background: {BG_CARD}; border: 1px solid {BORDER_SUBTLE}; border-radius: 10px; padding: 12px 14px; }}
+.sidebar-dataset-label {{ color: {TEXT_MUTED}; font-size: .68rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 5px; }}
+.sidebar-dataset-name {{ color: {TEXT_PRIMARY}; font-size: .86rem; font-weight: 700; line-height: 1.35; word-break: break-word; }}
+.sidebar-dataset-count {{ color: {PRIMARY_TEAL}; font-size: .75rem; font-weight: 650; margin-top: 7px; }}
 
 /* Sidebar Navigation Radio Buttons */
 section[data-testid="stSidebar"] div[role="radiogroup"] > label {{
@@ -260,6 +298,29 @@ section[data-testid="stSidebar"] div[role="radiogroup"] > label[data-checked="tr
     padding: 22px;
     margin-bottom: 16px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+}}
+
+/* Customer-voice browser */
+.feedback-record {{
+    background: {BG_CARD}; border: 1px solid {BORDER_SUBTLE}; border-radius: 10px;
+    padding: 15px 17px; margin-bottom: 9px;
+}}
+.feedback-record:hover {{ border-color: {BORDER_HOVER}; }}
+.feedback-record-top {{ display: flex; justify-content: space-between; gap: 12px; align-items: center; }}
+.feedback-record-top > div {{ color: {TEXT_MUTED}; font-size: .75rem; }}
+.feedback-record p {{ color: {TEXT_PRIMARY}; font-size: .92rem; line-height: 1.5; margin: 12px 0 10px; }}
+.feedback-record footer {{ border-top: 1px solid rgba(38,53,76,.75); padding-top: 9px; color: {TEXT_SECONDARY}; font-size: .75rem; }}
+
+/* Native controls keep keyboard behaviour while receiving a visible focus treatment. */
+button:focus-visible, input:focus-visible, textarea:focus-visible {{ outline: 2px solid {BORDER_FOCUS} !important; outline-offset: 2px; }}
+div[data-testid="stDownloadButton"] button, div[data-testid="stButton"] button {{ border-radius: 8px; font-weight: 700; }}
+div[data-testid="stDataFrame"] {{ border: 1px solid {BORDER_SUBTLE}; border-radius: 10px; overflow: hidden; }}
+
+@media (max-width: 700px) {{
+    .main .block-container {{ padding: 1rem .9rem 2.5rem; }}
+    .page-hero {{ align-items: flex-start; flex-direction: column; gap: 13px; }}
+    .page-hero-context {{ white-space: normal; }}
+    .kpi-card {{ padding: 16px; }}
 }}
 
 /* Statistical Spike Alert Cards */

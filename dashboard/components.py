@@ -6,6 +6,7 @@ sentiment badges, section headers, statistical spike alert cards,
 and model benchmark cards.
 """
 
+from html import escape
 from typing import Any, Dict, Optional
 import streamlit as st
 from dashboard.styles import (
@@ -33,7 +34,7 @@ def get_sentiment_badge_html(sentiment: str) -> str:
         css_class = "sentiment-badge-neu"
         icon = "●"
 
-    return f'<span class="sentiment-badge {css_class}">{icon} {normalized}</span>'
+    return f'<span class="sentiment-badge {css_class}">{icon} {escape(normalized)}</span>'
 
 
 def render_sentiment_badge(sentiment: str) -> None:
@@ -90,16 +91,16 @@ def get_kpi_card_html(
     <div class="kpi-card">
         <div>
             <div class="kpi-header">
-                <span class="kpi-label">{title}</span>
+                <span class="kpi-label">{escape(str(title))}</span>
                 <div class="kpi-icon-pill" style="background-color: {icon_bg};">
                     {icon}
                 </div>
             </div>
-            <div class="kpi-value">{value}</div>
+            <div class="kpi-value">{escape(str(value))}</div>
         </div>
         <div class="kpi-footer">
             {badge_html}
-            <span>{subtitle}</span>
+            <span>{escape(str(subtitle))}</span>
         </div>
     </div>
     """
@@ -210,6 +211,61 @@ def get_callout_html(message: str, callout_type: str = "info") -> str:
     """Generate an info, success, or warning callout card."""
     css_class = f"{callout_type.lower()}-callout"
     return f'<div class="{css_class}">{message}</div>'
+
+
+def render_page_hero(
+    eyebrow: str,
+    title: str,
+    description: str,
+    context: Optional[str] = None,
+) -> None:
+    """Render a consistent product-level page introduction."""
+    context_html = (
+        f'<span class="page-hero-context">{escape(str(context))}</span>' if context else ""
+    )
+    st.markdown(
+        f'''<section class="page-hero">
+            <div class="page-hero-copy">
+                <p class="page-hero-eyebrow">{escape(str(eyebrow))}</p>
+                <h1>{escape(str(title))}</h1>
+                <p>{escape(str(description))}</p>
+            </div>{context_html}
+        </section>''',
+        unsafe_allow_html=True,
+    )
+
+
+def render_dataset_status(source: str, records: int) -> None:
+    """Render compact dataset provenance for use at the top of analytic pages."""
+    st.markdown(
+        f'''<div class="dataset-status">
+            <span class="dataset-status-dot" aria-hidden="true"></span>
+            <span><strong>Active dataset</strong> · {escape(str(source))}</span>
+            <span class="dataset-status-count">{int(records):,} records</span>
+        </div>''',
+        unsafe_allow_html=True,
+    )
+
+
+def render_feedback_record(
+    text: str,
+    sentiment: str,
+    probability: Optional[float] = None,
+    metadata: Optional[str] = None,
+) -> None:
+    """Render one readable feedback record rather than an unstructured dataframe row."""
+    probability_html = ""
+    if probability is not None:
+        probability_html = f'<span>Model confidence {float(probability):.0%}</span>'
+    metadata_html = f'<span>{escape(str(metadata))}</span>' if metadata else ""
+    st.markdown(
+        f'''<article class="feedback-record">
+            <div class="feedback-record-top">{get_sentiment_badge_html(sentiment)}<div>{metadata_html}</div></div>
+            <p>{escape(str(text))}</p>
+            <footer>{probability_html}</footer>
+        </article>''',
+        unsafe_allow_html=True,
+    )
 
 
 def render_callout(message: str, callout_type: str = "info") -> None:

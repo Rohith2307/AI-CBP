@@ -141,3 +141,11 @@ def test_callout_html_generation():
     warn_html = get_callout_html("Warning message", callout_type="warning")
     assert "warning-callout" in warn_html
     assert "Warning message" in warn_html
+
+
+def test_global_css_includes_product_shell_and_feedback_reader_patterns():
+    """Verify the redesign exposes reusable shell and customer-voice styles."""
+    assert ".page-hero" in GLOBAL_CSS
+    assert ".dataset-status" in GLOBAL_CSS
+    assert ".feedback-record" in GLOBAL_CSS
+    assert "focus-visible" in GLOBAL_CSS
