@@ -107,3 +107,29 @@ def test_empty_state_resilience():
         at.sidebar.radio[0].set_value(page).run()
         assert not at.exception, f"Page '{page}' crashed on empty dataset"
         assert len(at.warning) > 0, f"Page '{page}' missing empty dataset warning"
+
+
+def test_overview_page_redesign_components():
+    """Verify redesigned Overview telemetry header, KPI cards, and charts render properly."""
+    at = AppTest.from_file(APP_PATH, default_timeout=30)
+    at.run()
+
+    at.sidebar.radio[0].set_value("🏠 Overview").run()
+    assert not at.exception
+    assert any("Executive Telemetry" in m.value for m in at.markdown)
+    assert any("Total Feedback Volume" in m.value for m in at.markdown)
+    assert any("Net Sentiment Score" in m.value for m in at.markdown)
+
+
+def test_ingestion_page_redesign_components():
+    """Verify redesigned Ingestion & Quality page headers, tabs, and audit components."""
+    at = AppTest.from_file(APP_PATH, default_timeout=30)
+    at.run()
+
+    at.sidebar.radio[0].set_value("📂 Ingestion & Quality").run()
+    assert not at.exception
+    assert any("Data Hygiene Engine" in m.value for m in at.markdown)
+    assert any("Data Quality & Hygiene Audit" in m.value for m in at.markdown)
+    # Check benchmark buttons
+    btn_labels = [b.label for b in at.button]
+    assert any("Load Development Sample" in l for l in btn_labels)

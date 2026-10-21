@@ -36,6 +36,26 @@ from src.insights import generate_insights, CAUSALITY_DISCLAIMER
 from src.predict import load_predictor
 from src.validation import validate_dataset
 
+from dashboard.styles import (
+    inject_custom_styles,
+    PRIMARY_TEAL,
+    ACCENT_VIOLET,
+    CORAL_RED,
+    AMBER_WARNING,
+    MUTED_SLATE,
+    TEXT_PRIMARY,
+    TEXT_SECONDARY,
+)
+from dashboard.chart_theme import apply_dark_theme
+from dashboard.components import (
+    render_kpi_card,
+    render_section_header,
+    render_sentiment_badge,
+    get_sentiment_badge_html,
+    render_callout,
+    get_callout_html,
+)
+
 
 # Page configuration
 st.set_page_config(
@@ -44,6 +64,9 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+# Inject dark luxury design system and scoped CSS
+inject_custom_styles()
 
 # Paths to default datasets and models
 DEFAULT_SAMPLE_PATH = Path("data/sample/sample_airline_sentiment.csv")
@@ -85,9 +108,15 @@ predictor = get_cached_predictor()
 # Sidebar Navigation & Dataset Selector
 # -------------------------------------------------------------------------
 with st.sidebar:
-    st.title("✈️ Sentiment Framework")
-    st.caption("Machine Learning for Social & Customer Text")
-    st.markdown("---")
+    st.markdown("""
+    <div class="sidebar-brand">
+        <div class="sidebar-brand-icon">✈️</div>
+        <div class="sidebar-brand-text">
+            <h2>SENTIMENT.AI</h2>
+            <span>Customer Intelligence</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
     nav_selection = st.radio(
         "Navigation",
@@ -103,24 +132,26 @@ with st.sidebar:
         ],
     )
 
-    st.markdown("---")
-    st.subheader("Active Dataset")
-    st.info(f"📁 **Source:** {st.session_state.get('dataset_source_name', 'None')}\n\n"
-            f"📊 **Rows:** {len(st.session_state.active_df):,}")
+    st.markdown("<hr style='border-color: #23314E; margin: 16px 0 14px 0;'>", unsafe_allow_html=True)
 
-    st.markdown("---")
-    st.caption("AI Capstone Project — Stage 11")
+    # Active Dataset Card
+    source_label = st.session_state.get("dataset_source_name", "None")
+    row_count = len(st.session_state.active_df)
+    st.markdown(f"""
+    <div style="background-color: #162238; border: 1px solid #23314E; border-radius: 10px; padding: 12px 14px;">
+        <div style="font-size: 0.72rem; font-weight: 700; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Active Corpus</div>
+        <div style="font-size: 0.90rem; font-weight: 700; color: #F8FAFC; word-break: break-word;">{source_label}</div>
+        <div style="font-size: 0.78rem; color: #06D6A0; margin-top: 5px; font-weight: 600;">● {row_count:,} Verified Records</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+    st.caption("AI Customer Sentiment Framework • v1.2.0")
 
 
-# Helper for rendering sentiment badges
+# Helper for rendering sentiment badges using design system pills
 def format_sentiment_badge(sentiment: str) -> str:
-    color_map = {
-        "Positive": "#2ecc71",
-        "Neutral": "#f39c12",
-        "Negative": "#e74c3c",
-    }
-    color = color_map.get(sentiment, "#95a5a6")
-    return f'<span style="background-color: {color}; color: white; padding: 3px 8px; border-radius: 4px; font-weight: bold;">{sentiment}</span>'
+    return get_sentiment_badge_html(sentiment)
 
 
 def prepare_df_with_sentiment(data: pd.DataFrame, col_name: str) -> pd.DataFrame:
@@ -138,9 +169,10 @@ def prepare_df_with_sentiment(data: pd.DataFrame, col_name: str) -> pd.DataFrame
 # =========================================================================
 if nav_selection == "🏠 Overview":
     st.title("Customer Sentiment Analysis Framework")
-    st.markdown(
-        "An end-to-end machine learning system that automates sentiment identification, "
-        "validates text quality, identifies operational trends, and converts customer feedback into actionable business insights."
+    render_section_header(
+        "Executive Telemetry & Sentiment Health",
+        "Real-time opinion metrics, net sentiment balance, and distribution analytics across customer feedback.",
+        badge="Live Telemetry",
     )
 
     if st.session_state.active_df.empty:
@@ -149,7 +181,7 @@ if nav_selection == "🏠 Overview":
         df = st.session_state.active_df
         sentiment_col = "predicted_sentiment" if "predicted_sentiment" in df.columns else "sentiment"
 
-        # KPIs
+        # KPIs Calculation
         total = len(df)
         counts = df[sentiment_col].value_counts().to_dict()
         neg_count = counts.get("Negative", 0)
@@ -161,30 +193,81 @@ if nav_selection == "🏠 Overview":
         neu_rate = round((neu_count / total) * 100, 1)
         nss = round(pos_rate - neg_rate, 1)
 
-        col1, col2, col3, col4 = st.columns(4)
-        col1.metric("Total Comments", f"{total:,}")
-        col2.metric("Negative Rate", f"{neg_rate}%", delta=f"-{neg_rate}%", delta_color="inverse")
-        col3.metric("Positive Rate", f"{pos_rate}%", delta=f"{pos_rate}%")
-        col4.metric("Net Sentiment Score", f"{nss}", delta="Positive - Negative")
+        # 4 Luxury KPI Cards
+        k1, k2, k3, k4 = st.columns(4)
+        with k1:
+            render_kpi_card(
+                "Total Feedback Volume",
+                f"{total:,}",
+                "Customer comments ingested",
+                badge_text="100% Ingested",
+                badge_type="violet",
+                icon="💬",
+            )
+        with k2:
+            render_kpi_card(
+                "Negative Grievance Rate",
+                f"{neg_rate}%",
+                f"{neg_count:,} dissatisfaction reports",
+                badge_text=f"-{neg_rate}%",
+                badge_type="negative",
+                icon="⚠️",
+            )
+        with k3:
+            render_kpi_card(
+                "Positive Feedback Rate",
+                f"{pos_rate}%",
+                f"{pos_count:,} positive expressions",
+                badge_text=f"+{pos_rate}%",
+                badge_type="positive",
+                icon="✨",
+            )
+        with k4:
+            nss_badge_type = "positive" if nss > 0 else "negative"
+            render_kpi_card(
+                "Net Sentiment Score",
+                f"{nss:+.1f}",
+                "Balance index (Pos % - Neg %)",
+                badge_text="Advocacy Dominant" if nss > 0 else "Grievance Dominant",
+                badge_type=nss_badge_type,
+                icon="📈",
+            )
 
-        st.markdown("---")
+        st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
 
         # Distribution Visualizations
         c1, c2 = st.columns([3, 2])
         overview_eda_df = prepare_df_with_sentiment(df, sentiment_col)
         with c1:
-            st.subheader("Sentiment Class Distribution")
-            bar_fig = create_sentiment_bar_chart(overview_eda_df)
+            bar_fig = apply_dark_theme(
+                create_sentiment_bar_chart(overview_eda_df),
+                title="Sentiment Class Distribution",
+            )
             st.plotly_chart(bar_fig, use_container_width=True)
 
         with c2:
-            st.subheader("Proportion Breakdown")
-            donut_fig = create_sentiment_donut_chart(overview_eda_df)
+            donut_fig = apply_dark_theme(
+                create_sentiment_donut_chart(overview_eda_df),
+                title="Sentiment Share Breakdown",
+            )
             st.plotly_chart(donut_fig, use_container_width=True)
 
-        st.info(
-            "💡 **Framework Objective:** Convert noisy unstructured text into measurable metrics. "
-            "All statistics on this dashboard are dynamically calculated from the loaded dataset."
+        # Chronological Feedback Trajectory Preview (when date information is available)
+        date_col = "date_parsed" if "date_parsed" in df.columns else ("date" if "date" in df.columns else None)
+        if date_col is not None:
+            trend_preview_fig = create_temporal_trend_chart(overview_eda_df)
+            if trend_preview_fig is not None:
+                st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+                styled_trend = apply_dark_theme(
+                    trend_preview_fig,
+                    title="Chronological Sentiment Trajectory (Daily Volume Trend)",
+                )
+                st.plotly_chart(styled_trend, use_container_width=True)
+
+        render_callout(
+            "💡 <b>Real-Time Dynamic Telemetry:</b> All metrics and proportions are calculated dynamically "
+            "from the active dataset. Uploading a custom dataset updates dependent KPIs, distributions, and downstream inferences instantly.",
+            callout_type="info",
         )
 
 
@@ -193,9 +276,10 @@ if nav_selection == "🏠 Overview":
 # =========================================================================
 elif nav_selection == "📂 Ingestion & Quality":
     st.title("Dataset Ingestion & Quality Validation")
-    st.markdown(
-        "Upload a customer text CSV or switch datasets. The ingestion engine automatically detects column schemas, "
-        "validates text records, removes exact duplicates, and logs all data cleaning steps transparently."
+    render_section_header(
+        "Corpus Ingestion & Data Hygiene Engine",
+        "Upload customer text CSVs, auto-detect column schemas, and inspect automated data deduplication audit logs.",
+        badge="Data Engineering",
     )
 
     tab_upload, tab_presets = st.tabs(["📤 Upload Custom CSV", "📚 Load Benchmark Datasets"])
@@ -249,6 +333,14 @@ elif nav_selection == "📂 Ingestion & Quality":
     with tab_presets:
         c1, c2 = st.columns(2)
         with c1:
+            st.markdown("""
+            <div class="surface-card" style="margin-bottom: 10px;">
+                <h4 style="margin: 0 0 6px 0; color: #F8FAFC;">🧪 Development Sample</h4>
+                <p style="font-size: 0.85rem; color: #94A3B8; margin-bottom: 12px;">
+                    Balanced fixture with 300 comments (100 Positive, 100 Negative, 100 Neutral). Ideal for rapid verification.
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
             if st.button("Load Development Sample (300 records)"):
                 loaded_df, _ = load_dataset(DEFAULT_SAMPLE_PATH)
                 val_res = validate_dataset(loaded_df)
@@ -261,6 +353,14 @@ elif nav_selection == "📂 Ingestion & Quality":
 
         with c2:
             if DEFAULT_FULL_PATH.exists():
+                st.markdown("""
+                <div class="surface-card" style="margin-bottom: 10px;">
+                    <h4 style="margin: 0 0 6px 0; color: #F8FAFC;">✈️ Full Benchmark Corpus</h4>
+                    <p style="font-size: 0.85rem; color: #94A3B8; margin-bottom: 12px;">
+                        Full Twitter Airline Sentiment dataset (14,427 validated records across 6 major US airlines).
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
                 if st.button("Load Full Benchmark (14,427 records)"):
                     loaded_df, _ = load_dataset(DEFAULT_FULL_PATH)
                     val_res = validate_dataset(loaded_df)
@@ -271,20 +371,105 @@ elif nav_selection == "📂 Ingestion & Quality":
                     st.success("Loaded full benchmark dataset!")
                     st.rerun()
 
-    st.markdown("---")
-    st.subheader("Data Quality Summary")
+    st.markdown("<div style='height: 18px;'></div>", unsafe_allow_html=True)
+    render_section_header(
+        "Data Quality & Hygiene Audit",
+        "Automated validation metrics, duplicate comment purge counts, and inspected records.",
+        badge="Audit Log",
+    )
 
     if st.session_state.validation_result:
         vr = st.session_state.validation_result.report
         q1, q2, q3, q4 = st.columns(4)
-        q1.metric("Total Records Ingested", f"{vr.total_records:,}")
-        q2.metric("Valid Records Retained", f"{vr.valid_records:,}")
-        q3.metric("Duplicate Comments Removed", f"{vr.duplicate_count:,}")
-        q4.metric("Avg Character Length", f"{vr.avg_char_length:.1f} chars")
+        with q1:
+            render_kpi_card(
+                "Total Ingested",
+                f"{vr.total_records:,}",
+                "Raw records parsed",
+                badge_text="Input",
+                badge_type="neutral",
+                icon="📥",
+            )
+        with q2:
+            retention_pct = round((vr.valid_records / max(vr.total_records, 1)) * 100, 1)
+            render_kpi_card(
+                "Valid Retained",
+                f"{vr.valid_records:,}",
+                f"{retention_pct}% retention rate",
+                badge_text="Clean",
+                badge_type="positive",
+                icon="✅",
+            )
+        with q3:
+            render_kpi_card(
+                "Duplicates Purged",
+                f"{vr.duplicate_count:,}",
+                "Exact duplicates removed",
+                badge_text="Deduplicated",
+                badge_type="warning" if vr.duplicate_count > 0 else "neutral",
+                icon="🧹",
+            )
+        with q4:
+            render_kpi_card(
+                "Mean Text Length",
+                f"{vr.avg_char_length:.1f}",
+                "Characters per comment",
+                badge_text="Avg Length",
+                badge_type="violet",
+                icon="📏",
+            )
+
+        st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
+
+        # Visual breakdown of data hygiene
+        h1, h2 = st.columns([1, 1])
+        with h1:
+            hygiene_labels = ["Valid Records Retained"]
+            hygiene_values = [vr.valid_records]
+            hygiene_colors = [PRIMARY_TEAL]
+
+            if vr.duplicate_count > 0:
+                hygiene_labels.append("Duplicates Purged")
+                hygiene_values.append(vr.duplicate_count)
+                hygiene_colors.append(AMBER_WARNING)
+
+            if vr.empty_text_count > 0:
+                hygiene_labels.append("Empty Text Removed")
+                hygiene_values.append(vr.empty_text_count)
+                hygiene_colors.append(CORAL_RED)
+
+            hygiene_fig = go.Figure(data=[
+                go.Pie(
+                    labels=hygiene_labels,
+                    values=hygiene_values,
+                    hole=0.6,
+                    marker=dict(colors=hygiene_colors),
+                    textinfo="label+value",
+                    hoverinfo="label+value+percent",
+                )
+            ])
+            apply_dark_theme(hygiene_fig, title="Data Hygiene & Retention Breakdown")
+            st.plotly_chart(hygiene_fig, use_container_width=True)
+
+        with h2:
+            st.markdown(f"""
+            <div class="surface-card" style="height: 100%; display: flex; flex-direction: column; justify-content: center;">
+                <h4 style="margin: 0 0 10px 0; color: #F8FAFC;">🛡️ Automated Validation Summary</h4>
+                <p style="font-size: 0.88rem; color: #94A3B8; line-height: 1.5; margin-bottom: 8px;">
+                    <b>Schema Standardization:</b> All fields normalized into canonical representations.
+                </p>
+                <p style="font-size: 0.88rem; color: #94A3B8; line-height: 1.5; margin-bottom: 8px;">
+                    <b>Exact Duplicate Purge:</b> Found and quarantined <b>{vr.duplicate_count:,} duplicate comments</b> to protect downstream models from over-fitting.
+                </p>
+                <p style="font-size: 0.88rem; color: #94A3B8; line-height: 1.5; margin: 0;">
+                    <b>Encoding Integrity:</b> Validated character encodings and standardized labels into <code>Positive</code>, <code>Negative</code>, and <code>Neutral</code>.
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
 
         if vr.warnings:
             for w in vr.warnings:
-                st.warning(f"⚠️ {w}")
+                render_callout(f"⚠️ {w}", callout_type="warning")
 
         with st.expander("Inspected Data Sample (First 10 Rows)"):
             st.dataframe(st.session_state.active_df.head(10), use_container_width=True)
