@@ -9,3 +9,10 @@ gatherUsageStats = false
 
 [client]
 showErrorDetails = true
+
+[theme]
+primaryColor = "#06D6A0"
+backgroundColor = "#0B1120"
+secondaryBackgroundColor = "#10192D"
+textColor = "#F8FAFC"
+font = "sans serif"
