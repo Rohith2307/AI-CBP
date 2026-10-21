@@ -713,7 +713,7 @@ elif nav_selection == "🔍 Feedback Explorer":
     else:
         df = st.session_state.active_df.copy()
         sent_col = "predicted_sentiment" if "predicted_sentiment" in df.columns else "sentiment"
-        text_col = "original_text" if "original_text" in df.columns else "text"
+        text_col = "original_text" if "original_text" in df.columns else ("text" if "text" in df.columns else ("clean_text" if "clean_text" in df.columns else df.columns[0]))
 
         c1, c2, c3 = st.columns([2, 1, 1])
         with c1:
@@ -770,7 +770,8 @@ elif nav_selection == "📈 Trends & Spikes":
     else:
         df = st.session_state.active_df
         sent_col = "predicted_sentiment" if "predicted_sentiment" in df.columns else "sentiment"
-        insights = generate_insights(df, sentiment_col=sent_col, min_daily_volume=10)
+        text_col = "text" if "text" in df.columns else ("clean_text" if "clean_text" in df.columns else ("original_text" if "original_text" in df.columns else df.columns[0]))
+        insights = generate_insights(df, text_col=text_col, sentiment_col=sent_col, min_daily_volume=10)
 
         # Statistical Spike Alerts Section
         st.subheader("🚨 Statistical Negative Grievance Spike Alerts")
@@ -926,7 +927,8 @@ elif nav_selection == "📑 Insights & Export":
     else:
         df = st.session_state.active_df
         sent_col = "predicted_sentiment" if "predicted_sentiment" in df.columns else "sentiment"
-        insights = generate_insights(df, sentiment_col=sent_col)
+        text_col = "text" if "text" in df.columns else ("clean_text" if "clean_text" in df.columns else ("original_text" if "original_text" in df.columns else df.columns[0]))
+        insights = generate_insights(df, text_col=text_col, sentiment_col=sent_col)
 
         # Executive Summary Card
         st.markdown(f"""
