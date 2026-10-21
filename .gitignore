@@ -34,3 +34,4 @@ models/*
 .idea/
 .vscode/
 *.swp
+.streamlit/credentials.toml
